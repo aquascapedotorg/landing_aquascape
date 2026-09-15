@@ -1,0 +1,66 @@
+{
+  "generated_at": "2026-09-15T12:00:00Z",
+  "org": "aquascapedotorg",
+  "repos": [
+    {
+      "name": "aquascape-web",
+      "description": "Website utama aquascape.org — portal informasi dan komunitas aquascaping Indonesia.",
+      "language": "JavaScript",
+      "visibility": "private",
+      "created_at": "2025-08-10T09:00:00Z",
+      "updated_at": "2026-09-10T14:30:00Z",
+      "topics": ["web", "nextjs", "aquascape"],
+      "readme": "# Aquascape Web\n\nWebsite utama untuk komunitas aquascaping Indonesia.\n\n## Tech Stack\n\n- **Framework**: Next.js 14\n- **Styling**: Tailwind CSS\n- **Database**: PostgreSQL\n- **Hosting**: Vercel\n\n## Getting Started\n\n```bash\nnpm install\nnpm run dev\n```\n\nBuka [http://localhost:3000](http://localhost:3000) di browser.\n\n## Fitur\n\n- Katalog tanaman aquascape\n- Forum diskusi\n- Galeri aquascape\n- Panduan pemula\n\n## Kontribusi\n\nSilakan buat pull request untuk kontribusi. Pastikan mengikuti code style yang sudah ditentukan."
+    },
+    {
+      "name": "plant-identifier-api",
+      "description": "REST API untuk identifikasi tanaman aquascape menggunakan machine learning.",
+      "language": "Python",
+      "visibility": "private",
+      "created_at": "2025-11-05T10:00:00Z",
+      "updated_at": "2026-09-08T08:15:00Z",
+      "topics": ["api", "machine-learning", "python", "flask"],
+      "readme": "# Plant Identifier API\n\nREST API untuk mengidentifikasi jenis tanaman aquascape dari foto.\n\n## Endpoint\n\n| Method | Path | Description |\n|--------|------|-------------|\n| POST | `/api/identify` | Upload foto tanaman untuk identifikasi |\n| GET | `/api/plants` | Daftar semua tanaman yang didukung |\n| GET | `/api/plants/:id` | Detail tanaman berdasarkan ID |\n\n## Model\n\nMenggunakan model CNN yang di-train dengan dataset 5000+ foto tanaman aquascape.\n\n### Akurasi\n\n- Training accuracy: 94.2%\n- Validation accuracy: 91.8%\n\n## Setup\n\n```bash\npip install -r requirements.txt\npython app.py\n```\n\n## Environment Variables\n\n```\nMODEL_PATH=./models/plant_classifier_v2.h5\nDATABASE_URL=postgresql://...\n```"
+    },
+    {
+      "name": "aquascape-mobile",
+      "description": "Aplikasi mobile cross-platform untuk komunitas aquascaping.",
+      "language": "Dart",
+      "visibility": "private",
+      "created_at": "2026-02-20T07:00:00Z",
+      "updated_at": "2026-09-12T16:45:00Z",
+      "topics": ["flutter", "mobile", "dart"],
+      "readme": "# Aquascape Mobile\n\nAplikasi mobile cross-platform (iOS & Android) untuk komunitas aquascaping.\n\n## Screenshots\n\n*Coming soon*\n\n## Tech Stack\n\n- **Framework**: Flutter 3.x\n- **State Management**: Riverpod\n- **Backend**: Supabase\n\n## Fitur\n\n1. Feed komunitas\n2. Upload foto aquascape\n3. Identifikasi tanaman (via Plant Identifier API)\n4. Tracking parameter air\n5. Reminder perawatan\n\n## Build\n\n```bash\nflutter pub get\nflutter run\n```"
+    },
+    {
+      "name": "water-params-monitor",
+      "description": "IoT dashboard untuk monitoring parameter air akuarium secara real-time.",
+      "language": "TypeScript",
+      "visibility": "private",
+      "created_at": "2026-04-15T08:00:00Z",
+      "updated_at": "2026-09-14T11:20:00Z",
+      "topics": ["iot", "dashboard", "typescript", "react"],
+      "readme": "# Water Parameters Monitor\n\nDashboard real-time untuk monitoring parameter air akuarium.\n\n## Parameter yang Dimonitor\n\n- pH\n- Suhu (°C)\n- TDS (ppm)\n- KH / GH\n- CO2 (mg/L)\n- Ammonia (NH3)\n\n## Arsitektur\n\n```\nSensor ESP32 → MQTT Broker → Backend (Node.js) → WebSocket → React Dashboard\n```\n\n## Hardware\n\n- ESP32 DevKit\n- pH Sensor Module\n- DS18B20 Temperature Sensor\n- TDS Sensor\n\n## Setup Dashboard\n\n```bash\nnpm install\nnpm run dev\n```\n\n## API\n\nDashboard menerima data via WebSocket pada `ws://localhost:8080`."
+    },
+    {
+      "name": "scape-design-tool",
+      "description": "Tool berbasis web untuk mendesain layout aquascape secara visual.",
+      "language": "JavaScript",
+      "visibility": "private",
+      "created_at": "2026-06-01T09:00:00Z",
+      "updated_at": "2026-09-05T13:00:00Z",
+      "topics": ["canvas", "design-tool", "javascript"],
+      "readme": "# Scape Design Tool\n\nTool berbasis web untuk merancang layout aquascape secara visual menggunakan HTML Canvas.\n\n## Fitur\n\n- Drag & drop hardscape (batu, kayu)\n- Library tanaman dengan ukuran realistis\n- Layer management\n- Export sebagai PNG / SVG\n- Template layout populer (Iwagumi, Nature, Dutch)\n\n## Tech\n\n- Vanilla JavaScript + Canvas API\n- Vite sebagai build tool\n\n## Development\n\n```bash\nnpm install\nnpm run dev\n```"
+    },
+    {
+      "name": "community-bot",
+      "description": "Discord bot untuk server komunitas Aquascape Indonesia.",
+      "language": "JavaScript",
+      "visibility": "private",
+      "created_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-08-20T09:30:00Z",
+      "topics": ["discord", "bot", "nodejs"],
+      "readme": "# Community Bot\n\nDiscord bot untuk server komunitas Aquascape Indonesia.\n\n## Commands\n\n| Command | Description |\n|---------|-------------|\n| `/plant <nama>` | Info tanaman aquascape |\n| `/params` | Parameter air ideal berdasarkan tipe scape |\n| `/gallery` | Tampilkan galeri aquascape acak |\n| `/reminder` | Set reminder perawatan |\n\n## Setup\n\n1. Buat Discord Application di [Discord Developer Portal](https://discord.com/developers)\n2. Copy token bot\n3. Set environment variable:\n\n```\nDISCORD_TOKEN=your_token_here\n```\n\n4. Jalankan:\n\n```bash\nnpm install\nnode index.js\n```"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "landing-aquascape",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Landing page for aquascapedotorg GitHub organization",
+  "scripts": {
+    "generate": "node generate-data.js"
+  }
+}
