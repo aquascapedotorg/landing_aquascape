@@ -1,0 +1,20 @@
+<svg width="256" height="256" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="diamondBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9df0fd" />
+      <stop offset="100%" stop-color="#70e2f5" />
+    </linearGradient>
+  </defs>
+  <rect x="60" y="12" width="68" height="68" rx="18" transform="rotate(45 60 12)" fill="url(#diamondBg)" />
+  <g transform="translate(14, 12) scale(0.92)">
+    <polygon points="18,50 32,38 32,62" fill="#44b4c2" />
+    <polygon points="44,30 64,30 52,42 32,38" fill="#1f5885" />
+    <polygon points="44,70 64,70 52,58 32,62" fill="#225c8a" />
+    <polygon points="32,38 52,42 42,50 32,50" fill="#2b719f" />
+    <polygon points="32,50 42,50 52,58 32,62" fill="#1b4d75" />
+    <polygon points="52,42 66,32 64,48 50,50" fill="#1a4c73" />
+    <polygon points="52,58 50,50 64,52 66,68" fill="#164367" />
+    <polygon points="50,50 66,32 82,50 66,68" fill="#0c233c" />
+    <circle cx="69" cy="50" r="3.5" fill="#ffffff" />
+  </g>
+</svg>

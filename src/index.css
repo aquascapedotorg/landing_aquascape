@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #e2e8f0;
+    background-color: #070b12;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Aquascape Markdown Rendering */
+.aquascape-markdown {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.aquascape-markdown h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(56, 189, 176, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.aquascape-markdown h2 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.35rem;
+}
+
+.aquascape-markdown h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #5eead4;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.aquascape-markdown h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.aquascape-markdown p {
+  margin-bottom: 1rem;
+}
+
+.aquascape-markdown a {
+  color: #38bdb0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.aquascape-markdown a:hover {
+  color: #5eead4;
+}
+
+.aquascape-markdown ul {
+  list-style-type: disc;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.aquascape-markdown ol {
+  list-style-type: decimal;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.aquascape-markdown li {
+  margin-bottom: 0.35rem;
+}
+
+.aquascape-markdown code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  padding: 0.15rem 0.4rem;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  color: #5eead4;
+}
+
+.aquascape-markdown pre {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  background-color: #05080e;
+  border: 1px solid rgba(56, 189, 176, 0.25);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+
+.aquascape-markdown pre code {
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+}
+
+.aquascape-markdown blockquote {
+  margin-bottom: 1rem;
+  padding: 0.6rem 1rem;
+  border-left: 3px solid #38bdb0;
+  background-color: rgba(56, 189, 176, 0.08);
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.aquascape-markdown table {
+  width: 100%;
+  margin-bottom: 1.25rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.aquascape-markdown th,
+.aquascape-markdown td {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.aquascape-markdown th {
+  background-color: rgba(255, 255, 255, 0.04);
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.aquascape-markdown tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.aquascape-markdown hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 1.75rem 0;
+}
+
+.aquascape-markdown img {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0.75rem 0;
+  max-width: 100%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

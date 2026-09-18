@@ -1,0 +1,6 @@
+{
+  "name": "AQUASCAPE Projects",
+  "description": "Daftar repositori open source dan proyek internal tim AQUASCAPE dengan animasi aquascape interaktif.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
