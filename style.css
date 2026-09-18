@@ -162,6 +162,20 @@ img {
   gap: var(--space-3);
 }
 
+.header-brand-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 10px rgba(56, 189, 176, 0.35));
+  flex-shrink: 0;
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+.header-brand:hover .header-brand-logo {
+  transform: scale(1.12) rotate(-3deg);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 16px rgba(56, 189, 176, 0.65));
+}
+
 .header-brand-name {
   font-size: var(--text-lg);
   font-weight: 600;
@@ -242,6 +256,56 @@ img {
   position: relative;
   z-index: 1;
   max-width: 680px;
+}
+
+/* Hero Banner Showcase (Transparent) */
+.hero-banner-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) 0;
+}
+
+.hero-banner-glow {
+  position: absolute;
+  inset: -15px;
+  background: radial-gradient(ellipse at center, rgba(56, 189, 176, 0.22) 0%, rgba(34, 211, 238, 0.1) 45%, transparent 70%);
+  filter: blur(28px);
+  border-radius: var(--radius-xl);
+  z-index: 0;
+  pointer-events: none;
+  animation: pulse-glow 5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+.hero-banner-img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 20px rgba(56, 189, 176, 0.25));
+  transition: transform var(--transition-slow), filter var(--transition-slow);
+}
+
+.hero-banner-img:hover {
+  transform: translateY(-3px) scale(1.02);
+  filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 30px rgba(56, 189, 176, 0.45));
 }
 
 .hero-label {
@@ -973,6 +1037,15 @@ img {
 
   .hero-stats {
     gap: var(--space-6);
+  }
+
+  .hero-banner-wrapper {
+    max-width: 100%;
+    margin-bottom: var(--space-6);
+  }
+
+  .hero-banner-img {
+    max-width: 320px;
   }
 
   .toolbar {
