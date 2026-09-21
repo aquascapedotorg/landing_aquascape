@@ -10,6 +10,7 @@ interface HeroProps {
   settings: AquascapeSettings;
   onUpdateSettings: (newSettings: Partial<AquascapeSettings>) => void;
   onFeedFish: () => void;
+  onRegenerate?: (count?: number) => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
@@ -17,6 +18,7 @@ export const Hero: React.FC<HeroProps> = ({
   settings,
   onUpdateSettings,
   onFeedFish,
+  onRegenerate,
 }) => {
   // Count stats
   const totalRepos = data.repos.length;
@@ -43,6 +45,7 @@ export const Hero: React.FC<HeroProps> = ({
           settings={settings}
           isHeroOnly={true}
           className="w-full h-full opacity-70"
+          onRegenerate={onRegenerate}
         />
 
         {/* Ambient vignette and overlay for readability */}

@@ -6,7 +6,8 @@ import { ReadmeModal } from './components/ReadmeModal';
 import { ZenAquariumModal } from './components/ZenAquariumModal';
 import { reposData } from './data/reposData';
 import { loadFishNamesCatalog } from './data/fishCatalog';
-import { RepoItem, AquascapeSettings } from './types';
+import { loadZenConfig, ZEN_CONFIG } from './data/zenConfig';
+import { RepoItem, AquascapeSettings, FishSpeciesType } from './types';
 import { aquascapeAudio } from './components/AquascapeAudio';
 import { Search, FolderGit2, Compass, Maximize2, Filter } from 'lucide-react';
 
@@ -16,9 +17,26 @@ export default function App() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('all');
   const [activeReadmeRepo, setActiveReadmeRepo] = useState<RepoItem | null>(null);
 
-  // Fetch real-time repos.json and fish-names.json
+  // Fetch real-time repos.json, fish-names.json, and zen-config.json
   useEffect(() => {
     loadFishNamesCatalog();
+    loadZenConfig().then((cfg) => {
+      if (cfg && cfg.defaults) {
+        setSettings((prev) => ({
+          ...prev,
+          lighting: cfg.defaults.lighting ?? prev.lighting,
+          co2Active: cfg.defaults.co2Active ?? prev.co2Active,
+          waterFlow: cfg.defaults.waterFlow ?? prev.waterFlow,
+          soundEnabled: cfg.defaults.soundEnabled ?? prev.soundEnabled,
+          showFlora: cfg.defaults.showFlora ?? prev.showFlora,
+          fishDensity: cfg.defaults.fishDensity ?? prev.fishDensity,
+          activeSpecies: (cfg.defaults.activeSpecies as FishSpeciesType[]) ?? prev.activeSpecies,
+          showNametags: cfg.defaults.showNametags ?? prev.showNametags,
+          enableLifeCycle: cfg.defaults.enableLifeCycle ?? prev.enableLifeCycle,
+        }));
+      }
+    });
+
     fetch('./repos.json')
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
@@ -39,9 +57,11 @@ export default function App() {
     soundEnabled: false,
     zenMode: false,
     showFlora: true,
-    fishDensity: 12,
-    activeSpecies: ['mascot', 'neonTetra', 'cherryShrimp', 'angelfish', 'rasbora', 'guppy'],
-    showNametags: false,
+    fishDensity: 5,
+    activeSpecies: ['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'],
+    showNametags: true,
+    enableLifeCycle: true,
+    totalRegenerations: 0,
   });
 
   const handleUpdateSettings = useCallback((newSettings: Partial<AquascapeSettings>) => {
@@ -57,6 +77,13 @@ export default function App() {
     if (typeof (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood === 'function') {
       (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood?.();
     }
+  }, []);
+
+  const handleRegenerate = useCallback((increment: number = 1) => {
+    setSettings((prev) => ({
+      ...prev,
+      totalRegenerations: (prev.totalRegenerations || 0) + increment,
+    }));
   }, []);
 
   // Compute all available languages and their counts
@@ -101,6 +128,7 @@ export default function App() {
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
         onFeedFish={handleFeedFish}
+        onRegenerate={handleRegenerate}
       />
 
       {/* 3. Main Projects Catalog & Explorer */}
@@ -262,6 +290,7 @@ export default function App() {
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
         onFeedFish={handleFeedFish}
+        onRegenerate={handleRegenerate}
       />
 
       {/* 6. Footer */}

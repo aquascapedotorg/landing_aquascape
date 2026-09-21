@@ -28,9 +28,23 @@ export interface AquascapeSettings {
   fishDensity?: number;
   activeSpecies?: FishSpeciesType[];
   showNametags?: boolean;
+  enableLifeCycle?: boolean;
+  totalRegenerations?: number;
 }
 
-export type FishSpeciesType = 'mascot' | 'neonTetra' | 'cherryShrimp' | 'angelfish' | 'rasbora' | 'guppy';
+export type FishSpeciesType =
+  | 'mascot'
+  | 'neonTetra'
+  | 'cherryShrimp'
+  | 'angelfish'
+  | 'rasbora'
+  | 'guppy'
+  | 'shark'
+  | 'whale'
+  | 'dolphin'
+  | 'mantaRay'
+  | 'pufferfish';
+export type FishLifeStage = 'baby' | 'juvenile' | 'adult' | 'elderly' | 'fading';
 
 export interface FishParticle {
   id: number;
@@ -40,6 +54,7 @@ export interface FishParticle {
   vx: number;
   vy: number;
   size: number;
+  baseSize: number;
   type: FishSpeciesType;
   color: string;
   secondaryColor?: string;
@@ -51,6 +66,10 @@ export interface FishParticle {
   targetY?: number;
   hunger?: number;
   eatenCount?: number;
+  stage: FishLifeStage;
+  growthPoints: number;
+  ageSec: number;
+  fadeOpacity?: number;
 }
 
 export interface BubbleParticle {

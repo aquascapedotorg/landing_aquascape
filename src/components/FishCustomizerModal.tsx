@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sliders, Tag, Check, RefreshCw, Edit3 } from 'lucide-react';
+import { X, Sliders, Tag, Check, RefreshCw, Edit3, RotateCw, PlusCircle } from 'lucide-react';
 import { AquascapeSettings, FishParticle, FishSpeciesType } from '../types';
 import { FISH_CATALOG } from '../data/fishCatalog';
+import { getHungerStatus } from './lifeCycleHelper';
 
 interface FishCustomizerProps {
   isOpen: boolean;
@@ -22,15 +23,15 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
 
   const currentSpecies: FishSpeciesType[] = settings.activeSpecies || [
     'mascot',
-    'neonTetra',
-    'cherryShrimp',
     'angelfish',
+    'cherryShrimp',
     'rasbora',
     'guppy',
   ];
 
-  const currentDensity = settings.fishDensity || 10;
-  const showNametags = settings.showNametags || false;
+  const currentDensity = settings.fishDensity || 5;
+  const showNametags = settings.showNametags ?? true;
+  const enableLifeCycle = settings.enableLifeCycle ?? true;
 
   // Refresh fish list from canvas
   const refreshList = () => {
@@ -55,10 +56,13 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
     if (currentSpecies.includes(speciesId)) {
       if (currentSpecies.length <= 1) return; // keep at least 1
       next = currentSpecies.filter((s) => s !== speciesId);
+      onUpdateSettings({ activeSpecies: next });
     } else {
       next = [...currentSpecies, speciesId];
+      // Automatically adjust density so the newly checked species has a slot to spawn
+      const nextDensity = Math.max(currentDensity, next.length);
+      onUpdateSettings({ activeSpecies: next, fishDensity: nextDensity });
     }
-    onUpdateSettings({ activeSpecies: next });
     setTimeout(refreshList, 80);
   };
 
@@ -82,11 +86,16 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
     setEditingId(null);
   };
 
-  const handleApplyPreset = (preset: 'all' | 'schooling' | 'minimalist') => {
+  const handleApplyPreset = (preset: 'all' | 'oceanic' | 'schooling' | 'minimalist') => {
     if (preset === 'all') {
       onUpdateSettings({
-        fishDensity: 12,
-        activeSpecies: ['mascot', 'neonTetra', 'cherryShrimp', 'angelfish', 'rasbora', 'guppy'],
+        fishDensity: 5,
+        activeSpecies: ['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'],
+      });
+    } else if (preset === 'oceanic') {
+      onUpdateSettings({
+        fishDensity: 7,
+        activeSpecies: ['shark', 'whale', 'dolphin', 'mantaRay', 'pufferfish'],
       });
     } else if (preset === 'schooling') {
       onUpdateSettings({
@@ -130,27 +139,34 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
             <label className="block text-[11px] font-semibold text-teal-300/80 uppercase tracking-wider mb-2">
               Preset Komposisi
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => handleApplyPreset('all')}
-                className="px-2.5 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer"
+                className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
               >
-                🌿 Ekosistem Lengkap
+                Tim AQUASCAPE
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('oceanic')}
+                className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
+              >
+                Samudra Tropis
               </button>
               <button
                 type="button"
                 onClick={() => handleApplyPreset('schooling')}
-                className="px-2.5 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer"
+                className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
               >
-                🐟 Schooling Ramai
+                Schooling Ramai
               </button>
               <button
                 type="button"
                 onClick={() => handleApplyPreset('minimalist')}
-                className="px-2.5 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer"
+                className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
               >
-                🪷 Zen Minimalis
+                Zen Minimalis
               </button>
             </div>
           </div>
@@ -235,6 +251,66 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
             </button>
           </div>
 
+          {/* Life Cycle & Regeneration Toggle */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-teal-500/15">
+            <div className="flex items-center gap-2.5">
+              <RotateCw className="w-4 h-4 text-teal-400" />
+              <div>
+                <div className="font-semibold text-slate-200">Simulasi Siklus Hidup & Regenerasi</div>
+                <div className="text-[10px] text-slate-400">
+                  Ikan berkembang (Bayi &rarr; Remaja &rarr; Dewasa) saat diberi kuaci, dan menetas kembali saat menua.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              id="toggle-lifecycle-btn"
+              onClick={() => onUpdateSettings({ enableLifeCycle: !enableLifeCycle })}
+              className={`relative w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                enableLifeCycle ? 'bg-teal-500' : 'bg-slate-700'
+              }`}
+            >
+              <div
+                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                  enableLifeCycle ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Regeneration Telemetry & Instant Hatch Action */}
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-teal-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-semibold text-teal-300 uppercase tracking-wider font-mono">
+                Statistik Regenerasi Biotope
+              </div>
+              <div className="text-xs text-slate-300 mt-0.5">
+                Total regenerasi siklus:{' '}
+                <span className="font-bold text-teal-300 font-mono">
+                  {settings.totalRegenerations || 0} kali
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              id="btn-spawn-baby-fish"
+              onClick={() => {
+                if (
+                  typeof (window as unknown as { __aquascapeSpawnBaby?: () => void }).__aquascapeSpawnBaby ===
+                  'function'
+                ) {
+                  (window as unknown as { __aquascapeSpawnBaby?: () => void }).__aquascapeSpawnBaby?.();
+                  onUpdateSettings({ fishDensity: currentDensity + 1 });
+                  setTimeout(refreshList, 100);
+                }
+              }}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/40 text-teal-300 font-semibold text-xs transition-all cursor-pointer active:scale-95"
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-teal-400" />
+              <span>Lahirkan Bayi Ikan</span>
+            </button>
+          </div>
+
           {/* Fish Roster & Custom Rename */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -252,16 +328,35 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
               </button>
             </div>
 
-            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
               {fishList.map((fish, index) => {
                 const isEditing = editingId === fish.id;
+                const hungerInfo = getHungerStatus(fish.hunger);
+                const stage = fish.stage || 'adult';
+                const stageLabel =
+                  stage === 'baby'
+                    ? 'Bayi'
+                    : stage === 'juvenile'
+                    ? 'Remaja'
+                    : stage === 'elderly'
+                    ? 'Tua'
+                    : 'Dewasa';
+                const stageBadgeColor =
+                  stage === 'baby'
+                    ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
+                    : stage === 'juvenile'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                    : stage === 'elderly'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                    : 'bg-teal-500/20 text-teal-300 border-teal-400/30';
+
                 return (
                   <div
                     key={fish.id || index}
-                    className="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-800/80 hover:border-teal-500/30 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80 hover:border-teal-500/30 gap-2 transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-teal-400" />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-teal-400 shrink-0" />
                       {isEditing ? (
                         <input
                           type="text"
@@ -272,8 +367,13 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
                           className="bg-slate-950 border border-teal-400/60 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none"
                         />
                       ) : (
-                        <div>
-                          <span className="font-bold text-white mr-1.5">{fish.name}</span>
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          <span className="font-bold text-white truncate">{fish.name}</span>
+                          <span
+                            className={`text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase font-semibold ${stageBadgeColor}`}
+                          >
+                            [{stageLabel}]
+                          </span>
                           <span className="text-[10px] text-teal-300/70 capitalize font-mono">
                             ({fish.type})
                           </span>
@@ -281,13 +381,20 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                    <div className="flex items-center gap-2.5 text-[10px] text-slate-400 shrink-0 font-mono">
+                      <span className="text-slate-300">
+                        Lapar:{' '}
+                        <span className="text-teal-300 font-semibold">{hungerInfo.percentage}%</span> (
+                        {hungerInfo.label})
+                      </span>
+                      <span>•</span>
                       <span>{fish.eatenCount || 0} kuaci</span>
+
                       {isEditing ? (
                         <button
                           type="button"
                           onClick={() => handleSaveRename(fish.id)}
-                          className="px-2 py-0.5 bg-teal-500 text-slate-950 rounded font-semibold hover:bg-teal-400 transition-colors"
+                          className="px-2 py-0.5 bg-teal-500 text-slate-950 rounded font-semibold hover:bg-teal-400 transition-colors cursor-pointer"
                         >
                           Simpan
                         </button>

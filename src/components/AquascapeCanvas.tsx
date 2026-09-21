@@ -7,13 +7,25 @@ import {
   drawRasbora,
   drawGuppy,
   drawFishNametag,
+  drawShark,
+  drawWhale,
+  drawDolphin,
+  drawMantaRay,
+  drawPufferfish,
 } from './fishRenderer';
+import {
+  updateFishLifeCycle,
+  feedFishKuaci,
+  spawnBabyFish,
+  getFishStageScale,
+} from './lifeCycleHelper';
 
 interface CanvasProps {
   settings: AquascapeSettings;
   onFeed?: () => void;
   className?: string;
   isHeroOnly?: boolean;
+  onRegenerate?: (count?: number) => void;
 }
 
 interface PlantStem {
@@ -32,6 +44,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
   settings,
   className = '',
   isHeroOnly = false,
+  onRegenerate,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -116,11 +129,11 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     plantsRef.current = plants;
 
     // 2. Initialize Fish with custom density and species
-    const defaultDensity = Math.min(16, Math.max(8, Math.floor(width / 110)));
-    const targetDensity = settings.fishDensity || defaultDensity;
+    const defaultDensity = 5;
+    const targetDensity = settings.fishDensity ?? defaultDensity;
     const activeSpecies: FishSpeciesType[] = settings.activeSpecies && settings.activeSpecies.length > 0
       ? settings.activeSpecies
-      : (['mascot', 'neonTetra', 'cherryShrimp', 'angelfish', 'rasbora', 'guppy'] as FishSpeciesType[]);
+      : (['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'] as FishSpeciesType[]);
 
     const fish = createFishSchool(width, height, targetDensity, activeSpecies);
     fishRef.current = fish;
@@ -193,9 +206,45 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     aquascapeAudio.playBubblePop();
   }, []);
 
+  // Instant baby fish spawning triggered manually by user
+  const spawnBaby = useCallback(() => {
+    if (!canvasRef.current || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const speciesList =
+      settings.activeSpecies && settings.activeSpecies.length > 0
+        ? settings.activeSpecies
+        : (['neonTetra', 'rasbora', 'guppy'] as FishSpeciesType[]);
+
+    // Pick species (prefer non-mascot for baby schooling, or mascot if only mascot)
+    const candidates = speciesList.filter((s) => s !== 'mascot');
+    const pickedSpecies =
+      candidates.length > 0
+        ? candidates[Math.floor(Math.random() * candidates.length)]
+        : speciesList[0];
+
+    const usedNames = new Set(fishRef.current.map((f) => f.name));
+    const baby = spawnBabyFish(rect.width, rect.height, pickedSpecies, usedNames);
+
+    ripplesRef.current.push({
+      x: baby.x,
+      y: baby.y,
+      r: 8,
+      opacity: 0.8,
+    });
+    aquascapeAudio.playBubblePop();
+
+    fishRef.current.push(baby);
+    setFishCount(fishRef.current.length);
+
+    if (onRegenerate) {
+      onRegenerate(1);
+    }
+  }, [settings.activeSpecies, onRegenerate]);
+
   // Expose methods on window for controls and modals
   useEffect(() => {
     (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood = () => dropFood();
+    (window as unknown as { __aquascapeSpawnBaby?: () => void }).__aquascapeSpawnBaby = () => spawnBaby();
     (window as unknown as { __aquascapeGetFishList?: () => FishParticle[] }).__aquascapeGetFishList = () => fishRef.current;
     (window as unknown as { __aquascapeRenameFish?: (id: number, newName: string) => void }).__aquascapeRenameFish = (id: number, newName: string) => {
       const target = fishRef.current.find((f) => f.id === id);
@@ -206,21 +255,23 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
     return () => {
       delete (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood;
+      delete (window as unknown as { __aquascapeSpawnBaby?: unknown }).__aquascapeSpawnBaby;
       delete (window as unknown as { __aquascapeGetFishList?: unknown }).__aquascapeGetFishList;
       delete (window as unknown as { __aquascapeRenameFish?: unknown }).__aquascapeRenameFish;
     };
-  }, [dropFood]);
+  }, [dropFood, spawnBaby]);
 
   // Dynamically synchronize fish population when density or active species change
   useEffect(() => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     if (canvas.width > 0 && canvas.height > 0) {
-      const defaultDensity = Math.min(16, Math.max(8, Math.floor(canvas.width / 110)));
+      const defaultDensity = 5;
       const targetDensity = settings.fishDensity || defaultDensity;
-      const activeSpecies: FishSpeciesType[] = settings.activeSpecies && settings.activeSpecies.length > 0
-        ? settings.activeSpecies
-        : (['mascot', 'neonTetra', 'cherryShrimp', 'angelfish', 'rasbora', 'guppy'] as FishSpeciesType[]);
+      const activeSpecies: FishSpeciesType[] =
+        settings.activeSpecies && settings.activeSpecies.length > 0
+          ? settings.activeSpecies
+          : (['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'] as FishSpeciesType[]);
 
       fishRef.current = createFishSchool(canvas.width, canvas.height, targetDensity, activeSpecies);
       setFishCount(fishRef.current.length);
@@ -627,7 +678,33 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       // -------------------------------------------------------------
       // 7. Living Fish Simulation & Mascot Rendering
       // -------------------------------------------------------------
-      fishRef.current.forEach((fish) => {
+      const enableLifeCycle = settings.enableLifeCycle ?? true;
+      const usedNames = new Set(fishRef.current.map((f) => f.name));
+
+      for (let i = fishRef.current.length - 1; i >= 0; i--) {
+        const fish = fishRef.current[i];
+
+        // 7a. Natural Life Cycle & Aging Evolution
+        const { rebornNeeded } = updateFishLifeCycle(fish, dt, { enableLifeCycle });
+        if (rebornNeeded) {
+          // Fish life ended naturally; spawn baby replacement
+          const baby = spawnBabyFish(w, h, fish.type, usedNames);
+          fishRef.current[i] = baby;
+          ripplesRef.current.push({
+            x: baby.x,
+            y: baby.y,
+            r: 8,
+            opacity: 0.8,
+          });
+          if (onRegenerate) {
+            onRegenerate(1);
+          }
+          continue;
+        }
+
+        // Dynamically compute size based on current life cycle stage
+        fish.size = fish.baseSize * getFishStageScale(fish.stage);
+
         // Nearest food search if hungry
         let targetFood: FoodParticle | null = null;
         if (foodRef.current.length > 0) {
@@ -653,7 +730,16 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           // Eat food when close
           if (dist < fish.size * 0.6) {
             (targetFood as FoodParticle).eaten = true;
-            fish.eatenCount = (fish.eatenCount || 0) + 1;
+            const growth = feedFishKuaci(fish);
+            if (growth.grew) {
+              // Growth evolution ripple
+              ripplesRef.current.push({
+                x: fish.x,
+                y: fish.y,
+                r: 10,
+                opacity: 0.85,
+              });
+            }
             // Little eating ripple
             ripplesRef.current.push({
               x: fish.x,
@@ -697,6 +783,36 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
             fish.vy += (Math.random() - 0.5) * 0.07;
             if (fish.y > h * 0.55) fish.vy -= 0.07;
             if (fish.y < h * 0.12) fish.vy += 0.07;
+          } else if (fish.type === 'whale') {
+            // Majestic deep slow cruise in lower-mid column
+            fish.vx += (Math.random() - 0.5) * 0.02;
+            fish.vy += (Math.random() - 0.5) * 0.02;
+            if (fish.y > h * 0.75) fish.vy -= 0.04;
+            if (fish.y < h * 0.3) fish.vy += 0.04;
+          } else if (fish.type === 'dolphin') {
+            // Energetic undulating swim with vertical waves
+            fish.vx += (Math.random() - 0.5) * 0.07;
+            fish.vy = Math.sin(timeSec * 2.2 + fish.id) * 0.28;
+            if (fish.y > h * 0.65) fish.vy -= 0.08;
+            if (fish.y < h * 0.12) fish.vy += 0.08;
+          } else if (fish.type === 'shark') {
+            // Sleek powerful patrol cruise across mid tank
+            fish.vx += (Math.random() - 0.5) * 0.06;
+            fish.vy += (Math.random() - 0.5) * 0.04;
+            if (fish.y > h * 0.7) fish.vy -= 0.05;
+            if (fish.y < h * 0.2) fish.vy += 0.05;
+          } else if (fish.type === 'mantaRay') {
+            // Gentle wide gliding, banking turns
+            fish.vx += (Math.random() - 0.5) * 0.03;
+            fish.vy = Math.sin(timeSec * 1.2 + fish.id) * 0.2;
+            if (fish.y > h * 0.7) fish.vy -= 0.05;
+            if (fish.y < h * 0.25) fish.vy += 0.05;
+          } else if (fish.type === 'pufferfish') {
+            // Hovering, gentle fluttering, drifting curiously
+            fish.vx += (Math.random() - 0.5) * 0.05;
+            fish.vy += (Math.random() - 0.5) * 0.05;
+            if (fish.y > h * 0.7) fish.vy -= 0.05;
+            if (fish.y < h * 0.2) fish.vy += 0.05;
           } else {
             // Neon Tetra and Rasbora schooling behavior
             if (fish.y < h * 0.18) fish.vy += 0.06;
@@ -708,7 +824,14 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
         // Clamp speed
         const speed = Math.hypot(fish.vx, fish.vy);
-        const maxSpeed = fish.type === 'angelfish' ? 1.6 : fish.type === 'mascot' ? 2.2 : 3.0;
+        let maxSpeed = 3.0;
+        if (fish.type === 'whale') maxSpeed = 1.2;
+        else if (fish.type === 'mantaRay') maxSpeed = 1.5;
+        else if (fish.type === 'angelfish') maxSpeed = 1.6;
+        else if (fish.type === 'pufferfish') maxSpeed = 1.8;
+        else if (fish.type === 'mascot') maxSpeed = 2.2;
+        else if (fish.type === 'shark') maxSpeed = 2.5;
+        else if (fish.type === 'dolphin') maxSpeed = 2.8;
         if (speed > maxSpeed) {
           fish.vx = (fish.vx / speed) * maxSpeed;
           fish.vy = (fish.vy / speed) * maxSpeed;
@@ -741,6 +864,9 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         // RENDER FISH GRAPHICS
         // ---------------------------------------------------------
         ctx.save();
+        if (fish.fadeOpacity !== undefined) {
+          ctx.globalAlpha = Math.max(0, Math.min(1, fish.fadeOpacity));
+        }
         ctx.translate(fish.x, fish.y);
         ctx.rotate(fish.angle);
 
@@ -865,6 +991,21 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         } else if (fish.type === 'guppy') {
           // --- FANCY GUPPY ---
           drawGuppy(ctx, fish, tailWag, timeSec);
+        } else if (fish.type === 'shark') {
+          // --- HIU (SHARK) ---
+          drawShark(ctx, fish, tailWag);
+        } else if (fish.type === 'whale') {
+          // --- PAUS (WHALE) ---
+          drawWhale(ctx, fish, tailWag);
+        } else if (fish.type === 'dolphin') {
+          // --- LUMBA-LUMBA (DOLPHIN) ---
+          drawDolphin(ctx, fish, tailWag);
+        } else if (fish.type === 'mantaRay') {
+          // --- PARI (MANTA RAY) ---
+          drawMantaRay(ctx, fish, tailWag);
+        } else if (fish.type === 'pufferfish') {
+          // --- BUNTAL (PUFFERFISH) ---
+          drawPufferfish(ctx, fish, tailWag, timeSec);
         } else {
           // --- NEON / CARDINAL TETRA ---
           const len = fish.size;
@@ -925,7 +1066,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         if (settings.showNametags || isHovered) {
           drawFishNametag(ctx, fish, isHovered);
         }
-      });
+      }
 
       // -------------------------------------------------------------
       // 8. Water Ripples from interactions & surface

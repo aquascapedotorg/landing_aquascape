@@ -3,7 +3,8 @@ import { AquascapeCanvas } from './AquascapeCanvas';
 import { AquascapeControls } from './AquascapeControls';
 import { FishCustomizerModal } from './FishCustomizerModal';
 import { AquascapeSettings } from '../types';
-import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders } from 'lucide-react';
+import { ZEN_CONFIG } from '../data/zenConfig';
+import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw } from 'lucide-react';
 
 interface ZenProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface ZenProps {
   settings: AquascapeSettings;
   onUpdateSettings: (newSettings: Partial<AquascapeSettings>) => void;
   onFeedFish: () => void;
+  onRegenerate?: (count?: number) => void;
 }
 
 export const ZenAquariumModal: React.FC<ZenProps> = ({
@@ -19,6 +21,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
   settings,
   onUpdateSettings,
   onFeedFish,
+  onRegenerate,
 }) => {
   const [isFaunaModalOpen, setIsFaunaModalOpen] = useState(false);
 
@@ -52,6 +55,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
           settings={settings}
           className="w-full h-full"
           isHeroOnly={false}
+          onRegenerate={onRegenerate}
         />
 
         {/* Top Header Bar */}
@@ -70,18 +74,27 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
           <div className="hidden md:flex items-center gap-4 px-4 py-1.5 rounded-2xl bg-black/40 backdrop-blur-md border border-teal-500/20 text-xs font-mono text-cyan-200/90 pointer-events-auto">
             <div className="flex items-center gap-1">
               <Thermometer className="w-3.5 h-3.5 text-teal-400" />
-              <span>24.8°C</span>
+              <span>{ZEN_CONFIG.telemetry.temperature}</span>
             </div>
             <span>•</span>
             <div className="flex items-center gap-1">
               <Droplets className="w-3.5 h-3.5 text-cyan-400" />
-              <span>pH 6.6</span>
+              <span>{ZEN_CONFIG.telemetry.ph}</span>
             </div>
             <span>•</span>
             <div className="flex items-center gap-1">
               <Activity className="w-3.5 h-3.5 text-emerald-400" />
-              <span>CO2 ~28ppm</span>
+              <span>{ZEN_CONFIG.telemetry.co2}</span>
             </div>
+            {settings.enableLifeCycle !== false && (
+              <>
+                <span>•</span>
+                <div className="flex items-center gap-1 text-teal-300">
+                  <RotateCw className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Regenerasi: {settings.totalRegenerations || 0}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Top Actions: Fauna Settings & Close Zen */}
