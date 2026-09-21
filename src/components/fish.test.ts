@@ -20,6 +20,16 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     expect(speciesIds).toContain('guppy');
   });
 
+  it('should prioritize the custom primary names defined by the user', () => {
+    const used = new Set<string>();
+    expect(getFishName('mascot', used)).toBe('Andreas');
+    expect(getFishName('angelfish', used)).toBe('Amsal');
+    expect(getFishName('cherryShrimp', used)).toBe('Fahrudin');
+    expect(getFishName('rasbora', used)).toBe('Pandu');
+    expect(getFishName('guppy', used)).toBe('Fransisca');
+    expect(getFishName('neonTetra', used)).toBe('Piki');
+  });
+
   it('should pick unique default names for species', () => {
     const used = new Set<string>();
     const name1 = getFishName('angelfish', used);

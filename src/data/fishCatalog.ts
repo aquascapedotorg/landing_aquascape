@@ -75,7 +75,7 @@ export const FISH_CATALOG: FishCatalogData = {
 };
 
 /**
- * Helper to pick a name for a given species, avoiding duplicates if possible
+ * Helper to pick a name for a given species, prioritizing user-defined order
  */
 export function getFishName(
   speciesId: 'mascot' | 'neonTetra' | 'cherryShrimp' | 'angelfish' | 'rasbora' | 'guppy',
@@ -84,20 +84,41 @@ export function getFishName(
   const species = FISH_CATALOG.species.find((s) => s.id === speciesId);
   const candidates = species?.defaultNames.filter((name) => !usedNames.has(name)) || [];
 
+  // 1. Prioritize first unused name in species defaultNames (respects JSON order)
   if (candidates.length > 0) {
-    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    const picked = candidates[0];
     usedNames.add(picked);
     return picked;
   }
 
-  // Fallback to namePool
+  // 2. Fallback to namePool in defined order
   const poolCandidates = FISH_CATALOG.namePool.filter((name) => !usedNames.has(name));
   if (poolCandidates.length > 0) {
-    const picked = poolCandidates[Math.floor(Math.random() * poolCandidates.length)];
+    const picked = poolCandidates[0];
     usedNames.add(picked);
     return picked;
   }
 
-  // Fallback if all used
-  return `${species?.name || 'Ikan'} #${usedNames.size + 1}`;
+  // 3. Fallback if all used
+  const fallback = `${species?.name || 'Ikan'} #${usedNames.size + 1}`;
+  usedNames.add(fallback);
+  return fallback;
+}
+
+/**
+ * Asynchronously loads fish-names.json from public folder to keep catalog synchronized at runtime
+ */
+export async function loadFishNamesCatalog(): Promise<void> {
+  try {
+    const res = await fetch('./fish-names.json');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && Array.isArray(json.species)) {
+        FISH_CATALOG.species = json.species;
+        FISH_CATALOG.namePool = json.namePool || FISH_CATALOG.namePool;
+      }
+    }
+  } catch {
+    // Keep bundled catalog as reliable fallback
+  }
 }
