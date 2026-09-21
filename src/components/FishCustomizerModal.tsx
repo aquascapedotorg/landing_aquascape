@@ -48,9 +48,14 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    refreshList();
+    const unsubscribe = aquascapeEvents.onFishRosterChanged(() => {
       refreshList();
-    }
+    });
+    return () => {
+      unsubscribe();
+    };
   }, [isOpen, settings.fishDensity, settings.activeSpecies]);
 
   if (!isOpen) return null;
@@ -63,16 +68,12 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
       onUpdateSettings({ activeSpecies: next });
     } else {
       next = [...currentSpecies, speciesId];
-      // Automatically adjust density so the newly checked species has a slot to spawn
-      const nextDensity = Math.max(currentDensity, next.length);
-      onUpdateSettings({ activeSpecies: next, fishDensity: nextDensity });
+      onUpdateSettings({ activeSpecies: next });
     }
-    setTimeout(refreshList, 80);
   };
 
   const handleDensityChange = (density: number) => {
     onUpdateSettings({ fishDensity: density });
-    setTimeout(refreshList, 80);
   };
 
   const handleStartRename = (fish: FishParticle) => {
@@ -93,10 +94,15 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
     if (preset) {
       onUpdateSettings({
         fishDensity: preset.density,
-        activeSpecies: preset.activeSpecies,
+        activeSpecies: [...preset.activeSpecies],
       });
-      setTimeout(refreshList, 80);
     }
+  };
+
+  const isPresetActive = (preset: { density: number; activeSpecies: FishSpeciesType[] }) => {
+    if (currentDensity !== preset.density) return false;
+    if (currentSpecies.length !== preset.activeSpecies.length) return false;
+    return preset.activeSpecies.every((s) => currentSpecies.includes(s));
   };
 
   return (
@@ -128,16 +134,23 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
               Preset Komposisi
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {ZEN_CONFIG.presets.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => handleApplyPreset(preset.id)}
-                  className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
-                >
-                  {preset.label}
-                </button>
-              ))}
+              {ZEN_CONFIG.presets.map((preset) => {
+                const active = isPresetActive(preset);
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => handleApplyPreset(preset.id)}
+                    className={`px-2 py-1.5 rounded-xl border text-center transition-all font-medium cursor-pointer text-xs ${
+                      active
+                        ? 'bg-teal-500/25 border-teal-400 text-white font-bold shadow-md shadow-teal-500/20 ring-1 ring-teal-400/50'
+                        : 'border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 text-slate-200'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

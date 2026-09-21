@@ -9,6 +9,7 @@ export interface AquascapeCanvasProvider {
 
 class AquascapeEventManager {
   private providers: { id: string; provider: AquascapeCanvasProvider }[] = [];
+  private rosterListeners: (() => void)[] = [];
 
   /**
    * Registers a canvas provider. The most recently registered provider becomes active.
@@ -31,7 +32,33 @@ class AquascapeEventManager {
 
   public getActiveProvider(): AquascapeCanvasProvider | undefined {
     if (this.providers.length === 0) return undefined;
+    // Zen canvas always takes precedence over Hero canvas when active/mounted
+    const zen = this.providers.find((p) => p.id.startsWith('zen'));
+    if (zen) return zen.provider;
     return this.providers[this.providers.length - 1].provider;
+  }
+
+  /**
+   * Subscribes to fish roster change events (e.g. density/species sync).
+   */
+  public onFishRosterChanged(listener: () => void): () => void {
+    this.rosterListeners.push(listener);
+    return () => {
+      this.rosterListeners = this.rosterListeners.filter((l) => l !== listener);
+    };
+  }
+
+  /**
+   * Notifies all subscribers that the fish school or roster has updated.
+   */
+  public notifyFishRosterChanged(): void {
+    this.rosterListeners.forEach((l) => {
+      try {
+        l();
+      } catch (err) {
+        console.error('Error in fish roster listener:', err);
+      }
+    });
   }
 
   public dropFood(x?: number, y?: number): void {
@@ -84,6 +111,7 @@ class AquascapeEventManager {
 
   public clearAll(): void {
     this.providers = [];
+    this.rosterListeners = [];
   }
 }
 

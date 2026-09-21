@@ -13,6 +13,7 @@ import {
   drawPufferfish,
   syncFishSchool,
   adjustFishPositionsForResize,
+  getFishOrientation,
 } from './fishRenderer';
 
 describe('Fish Fauna & Naming System (TDD)', () => {
@@ -407,6 +408,97 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     expect(fishList[0].y).toBeLessThan(300);
     expect(fishList[0].x).toBeGreaterThan(0);
     expect(fishList[0].y).toBeGreaterThan(0);
+  });
+
+  it('should respect requested density even when density is lower than active species count', () => {
+    const allSpecies: FishSpeciesType[] = [
+      'mascot',
+      'angelfish',
+      'cherryShrimp',
+      'rasbora',
+      'guppy',
+      'neonTetra',
+      'shark',
+      'whale',
+      'dolphin',
+      'mantaRay',
+      'pufferfish',
+    ];
+    const initialSchool = createFishSchool(800, 500, 11, allSpecies);
+    expect(initialSchool).toHaveLength(11);
+
+    // User sets slider to 5 ekor with all 11 species active
+    const synced = syncFishSchool(initialSchool, 5, allSpecies, 800, 500);
+    expect(synced).toHaveLength(5);
+    // Mascot should always be prioritized and preserved
+    expect(synced.some((f) => f.type === 'mascot')).toBe(true);
+  });
+
+  it('should safely render fish without calling ellipse with negative radius', () => {
+    const mockCtx = createMockCtx();
+    const fishWithWeirdSize: FishParticle = {
+      id: 10,
+      name: 'Tester',
+      x: 100,
+      y: 100,
+      vx: 1,
+      vy: 0,
+      size: -10, // negative or zero size should not crash ellipse
+      baseSize: 20,
+      type: 'guppy',
+      color: '#cbd5e1',
+      secondaryColor: '#ec4899',
+      angle: 0,
+      tailPhase: 0,
+      tailSpeed: 0.2,
+      hunger: 10,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 20,
+    };
+
+    expect(() => drawGuppy(mockCtx, fishWithWeirdSize, 0.1, 1.0)).not.toThrow();
+    // Verify that every ellipse call received non-negative radii
+    const ellipseCalls = vi.mocked(mockCtx.ellipse).mock.calls;
+    for (const call of ellipseCalls) {
+      const radiusX = call[2];
+      const radiusY = call[3];
+      expect(radiusX).toBeGreaterThan(0);
+      expect(radiusY).toBeGreaterThan(0);
+    }
+  });
+
+  it('should correctly calculate fish orientation so that fish is never upside-down when swimming left or right', () => {
+    // 1. Swimming right horizontally
+    const rightLevel = getFishOrientation(1.5, 0);
+    expect(rightLevel.isFacingLeft).toBe(false);
+    expect(rightLevel.pitch).toBeCloseTo(0);
+
+    // 2. Swimming right diving down
+    const rightDiving = getFishOrientation(1.0, 0.4);
+    expect(rightDiving.isFacingLeft).toBe(false);
+    expect(rightDiving.pitch).toBeGreaterThan(0);
+    expect(rightDiving.pitch).toBeLessThanOrEqual(Math.PI / 5);
+
+    // 3. Swimming left horizontally (MUST flip horizontally without flipping upside down)
+    const leftLevel = getFishOrientation(-1.5, 0);
+    expect(leftLevel.isFacingLeft).toBe(true);
+    expect(leftLevel.pitch).toBeCloseTo(0);
+
+    // 4. Swimming left diving down
+    const leftDiving = getFishOrientation(-1.0, 0.4);
+    expect(leftDiving.isFacingLeft).toBe(true);
+    expect(leftDiving.pitch).toBeGreaterThan(0);
+    expect(leftDiving.pitch).toBeLessThanOrEqual(Math.PI / 5);
+
+    // 5. Steep vertical swim - pitch should be capped so body does not do backflips
+    const steepDown = getFishOrientation(0.01, 5.0);
+    expect(steepDown.pitch).toBeLessThanOrEqual(Math.PI / 5);
+
+    const steepUp = getFishOrientation(-0.01, -5.0);
+    expect(steepUp.isFacingLeft).toBe(true);
+    expect(steepUp.pitch).toBeGreaterThanOrEqual(-Math.PI / 5);
   });
 });
 

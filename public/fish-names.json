@@ -89,7 +89,7 @@
       "category": "Apex Pelagic",
       "description": "Predator puncak bertubuh hidrodinamis baja dengan sirip punggung tajam dan gerak renang gesit.",
       "defaultNames": [
-        "Andreas",
+        "Amsal",
         "Baron",
         "Apex",
         "Titan",
@@ -104,7 +104,7 @@
       "category": "Oceanic Giant",
       "description": "Raksasa samudra berenang tenang dengan tubuh megah beralur dan kibasan ekor lambat berwibawa.",
       "defaultNames": [
-        "Fahrudin",
+        "Andreas",
         "Leviathan",
         "Atlas",
         "Echo",
@@ -119,7 +119,7 @@
       "category": "Marine Mammal",
       "description": "Biota cerdas lincah dengan moncong botol khas dan gaya renang meliuk bergelombang penuh pesona.",
       "defaultNames": [
-        "Amsal",
+        "Fahrudin",
         "Delta",
         "Aero",
         "Glider",
@@ -160,10 +160,10 @@
   ],
   "namePool": [
     "Pandu",
-    "Andreas",
-    "Fahrudin",
-    "Fransisca",
     "Amsal",
+    "Fahrudin",
+    "Andreas",
+    "Fransisca",
     "Bima",
     "Arjuna",
     "Citra",

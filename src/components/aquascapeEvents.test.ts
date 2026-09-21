@@ -119,4 +119,31 @@ describe('Aquascape Events & Canvas Provider Manager (TDD)', () => {
     expect(typeof globalWin.__aquascapeDropFood).toBe('function');
     expect(() => globalWin.__aquascapeDropFood?.(100, 20)).not.toThrow();
   });
+
+  it('should always prioritize Zen canvas over Hero canvas even if Hero is re-registered', () => {
+    const heroDrop = vi.fn();
+    const zenDrop = vi.fn();
+
+    aquascapeEvents.registerProvider('hero', { dropFood: heroDrop });
+    aquascapeEvents.registerProvider('zen-123', { dropFood: zenDrop });
+
+    // Hero re-registers due to prop changes while Zen is active
+    aquascapeEvents.registerProvider('hero', { dropFood: heroDrop });
+
+    aquascapeEvents.dropFood();
+    expect(zenDrop).toHaveBeenCalledTimes(1);
+    expect(heroDrop).not.toHaveBeenCalled();
+  });
+
+  it('should support onFishRosterChanged notification subscriptions', () => {
+    const listener = vi.fn();
+    const unsubscribe = aquascapeEvents.onFishRosterChanged(listener);
+
+    aquascapeEvents.notifyFishRosterChanged();
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+    aquascapeEvents.notifyFishRosterChanged();
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
 });

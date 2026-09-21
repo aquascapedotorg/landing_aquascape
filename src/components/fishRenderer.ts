@@ -350,15 +350,21 @@ export function createFishSchool(
         ] as FishSpeciesType[]);
 
   let idCounter = 1;
-  const targetCount = Math.max(totalCount, speciesList.length);
+  const targetCount = Math.max(1, totalCount);
 
-  // Phase 1: Guarantee exactly 1 fish for EVERY active species first
-  for (const sp of speciesList) {
+  // Phase 1: If mascot is active, always spawn 1 mascot first
+  if (speciesList.includes('mascot') && fish.length < targetCount) {
+    fish.push(createSingleFish('mascot', idCounter++, width, height, usedNames));
+  }
+
+  // Phase 2: Add other active species up to targetCount
+  const otherSpecies = speciesList.filter((s) => s !== 'mascot');
+  for (const sp of otherSpecies) {
     if (fish.length >= targetCount) break;
     fish.push(createSingleFish(sp, idCounter++, width, height, usedNames));
   }
 
-  // Phase 2: If targetCount > speciesList.length, round-robin fill remaining slots
+  // Phase 3: If targetCount > speciesList.length, round-robin fill remaining slots
   let loopIndex = 0;
   while (fish.length < targetCount) {
     const nextSpecies = speciesList[loopIndex % speciesList.length];
@@ -413,7 +419,7 @@ export function syncFishSchool(
           'pufferfish',
         ] as FishSpeciesType[]);
 
-  const targetCount = Math.max(totalCount, speciesList.length);
+  const targetCount = Math.max(1, totalCount);
 
   // 1. Filter existing fish: keep those whose species is still active (always keep mascot)
   let updatedFish = existingFish.filter(
@@ -428,6 +434,13 @@ export function syncFishSchool(
     const mascotFish = updatedFish.filter((f) => f.type === 'mascot');
     const nonMascots = updatedFish.filter((f) => f.type !== 'mascot');
     const allowedNonMascots = Math.max(0, targetCount - mascotFish.length);
+
+    // Keep younger/baby fish first
+    nonMascots.sort((a, b) => {
+      const stageWeight = (s: string) => (s === 'baby' ? 0 : s === 'juvenile' ? 1 : 2);
+      return stageWeight(a.stage) - stageWeight(b.stage);
+    });
+
     updatedFish = [...mascotFish, ...nonMascots.slice(0, allowedNonMascots)];
   }
 
@@ -591,8 +604,8 @@ export function drawAngelfish(ctx: CanvasRenderingContext2D, fish: FishParticle,
  */
 export function drawRasbora(ctx: CanvasRenderingContext2D, fish: FishParticle, tailWag: number): void {
   ctx.save();
-  const len = fish.size;
-  const hgt = fish.size * 0.42;
+  const len = Math.max(1, Math.abs(fish.size));
+  const hgt = Math.max(1, Math.abs(fish.size) * 0.42);
 
   // 1. Dorsal Fin (translucent red with black edge)
   ctx.fillStyle = 'rgba(239, 68, 68, 0.85)';
@@ -606,13 +619,13 @@ export function drawRasbora(ctx: CanvasRenderingContext2D, fish: FishParticle, t
   // 2. Shimmering Copper-Orange Body
   ctx.fillStyle = '#fb923c';
   ctx.beginPath();
-  ctx.ellipse(0, 0, len * 0.5, hgt, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, Math.max(0.1, len * 0.5), Math.max(0.1, hgt), 0, 0, Math.PI * 2);
   ctx.fill();
 
   // Golden belly highlight
   ctx.fillStyle = '#fef08a';
   ctx.beginPath();
-  ctx.ellipse(len * 0.1, hgt * 0.3, len * 0.25, hgt * 0.4, 0, 0, Math.PI * 2);
+  ctx.ellipse(len * 0.1, hgt * 0.3, Math.max(0.1, len * 0.25), Math.max(0.1, hgt * 0.4), 0, 0, Math.PI * 2);
   ctx.fill();
 
   // 3. Signature Black Triangular Wedge Patch (Harlequin mark)
@@ -667,19 +680,19 @@ export function drawGuppy(
   timeSec: number
 ): void {
   ctx.save();
-  const len = fish.size;
-  const hgt = fish.size * 0.3;
+  const len = Math.max(1, Math.abs(fish.size));
+  const hgt = Math.max(1, Math.abs(fish.size) * 0.3);
 
   // 1. Sleek Torpedo Body
   ctx.fillStyle = '#cbd5e1';
   ctx.beginPath();
-  ctx.ellipse(0, 0, len * 0.45, hgt, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, Math.max(0.1, len * 0.45), Math.max(0.1, hgt), 0, 0, Math.PI * 2);
   ctx.fill();
 
   // Pearlescent belly & metallic scales
   ctx.fillStyle = '#38bdf8';
   ctx.beginPath();
-  ctx.ellipse(len * 0.05, 0, len * 0.25, hgt * 0.6, 0, 0, Math.PI * 2);
+  ctx.ellipse(len * 0.05, 0, Math.max(0.1, len * 0.25), Math.max(0.1, hgt * 0.6), 0, 0, Math.PI * 2);
   ctx.fill();
 
   // Eye
@@ -1235,4 +1248,21 @@ export function drawFishNametag(
   }
 
   ctx.restore();
+}
+
+/**
+ * Calculates the horizontal flip and pitch rotation for a fish so its dorsal fin
+ * is always oriented upwards and never upside-down (Fixes inverted fish body bug).
+ */
+export function getFishOrientation(vx: number, vy: number): {
+  isFacingLeft: boolean;
+  pitch: number;
+} {
+  const isFacingLeft = vx < 0;
+  const maxPitch = Math.PI / 5; // max tilt approx 36 degrees for natural, graceful swimming
+  const horizontalSpeed = Math.max(0.05, Math.abs(vx));
+  const rawPitch = Math.atan2(vy, horizontalSpeed);
+  const pitch = Math.max(-maxPitch, Math.min(maxPitch, rawPitch));
+
+  return { isFacingLeft, pitch };
 }

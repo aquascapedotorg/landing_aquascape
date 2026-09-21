@@ -15,6 +15,7 @@ import {
   drawDolphin,
   drawMantaRay,
   drawPufferfish,
+  getFishOrientation,
 } from './fishRenderer';
 import {
   updateFishLifeCycle,
@@ -51,6 +52,11 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const settingsRef = useRef<AquascapeSettings>(settings);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   // Particles and entities stored in refs for optimal 60fps rendering without React re-render lag
   const fishRef = useRef<FishParticle[]>([]);
@@ -310,6 +316,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
     fishRef.current = syncFishSchool(fishRef.current, targetDensity, activeSpecies, w, h);
     setFishCount(fishRef.current.length);
+    aquascapeEvents.notifyFishRosterChanged();
   }, [settings.fishDensity, settings.activeSpecies]);
 
   // Main Canvas animation loop
@@ -345,12 +352,14 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
     // Animation Loop
     const render = (currentTime: number) => {
-      const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+      const rawDt = (currentTime - lastTime) / 1000;
+      const dt = Math.max(0, Math.min(rawDt, 0.1));
       lastTime = currentTime;
       const timeSec = currentTime * 0.001;
 
       if (!containerRef.current) return;
-      if (isHeroOnly && settings.zenMode) {
+      const currentSettings = settingsRef.current;
+      if (isHeroOnly && currentSettings.zenMode) {
         // Pause Hero animation frame loop while Zen Mode is active to eliminate dual canvas load
         animationFrameId = requestAnimationFrame(render);
         return;
@@ -361,19 +370,19 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
       // Current water flow multiplier
       const flowMultiplier =
-        settings.waterFlow === 'calm' ? 0.6 : settings.waterFlow === 'lively' ? 1.6 : 1.0;
+        currentSettings.waterFlow === 'calm' ? 0.6 : currentSettings.waterFlow === 'lively' ? 1.6 : 1.0;
 
       // -------------------------------------------------------------
       // 1. Draw Underwater Backdrop & Lighting Modes
       // -------------------------------------------------------------
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-      if (settings.lighting === 'daylight') {
+      if (currentSettings.lighting === 'daylight') {
         // Natural ADA Style planted aquarium daylight
         bgGrad.addColorStop(0, '#0a233a');
         bgGrad.addColorStop(0.35, '#0d3246');
         bgGrad.addColorStop(0.75, '#0b2633');
         bgGrad.addColorStop(1, '#06131c');
-      } else if (settings.lighting === 'moonlight') {
+      } else if (currentSettings.lighting === 'moonlight') {
         // Deep bioluminescent twilight moonlight
         bgGrad.addColorStop(0, '#040b17');
         bgGrad.addColorStop(0.4, '#07162b');
@@ -401,9 +410,9 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
         const rayGrad = ctx.createLinearGradient(rayOffset, 0, rayOffset + 40, h);
         const rayColor =
-          settings.lighting === 'daylight'
+          currentSettings.lighting === 'daylight'
             ? 'rgba(56, 189, 176, '
-            : settings.lighting === 'moonlight'
+            : currentSettings.lighting === 'moonlight'
             ? 'rgba(96, 165, 250, '
             : 'rgba(251, 191, 36, ';
 
@@ -481,7 +490,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       // -------------------------------------------------------------
       // 4. Draw & Sway Aquatic Plants (Flora)
       // -------------------------------------------------------------
-      if (settings.showFlora) {
+      if (currentSettings.showFlora) {
         ctx.save();
         plantsRef.current.forEach((plant) => {
           const segHeight = plant.height / plant.segments;
@@ -562,7 +571,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       ctx.restore();
 
       // Emit continuous fine CO2 mist if active
-      if (settings.co2Active && Math.random() < 0.65) {
+      if (currentSettings.co2Active && Math.random() < 0.65) {
         bubblesRef.current.push({
           x: diffuserX + (Math.random() * 12 - 6),
           y: diffuserY + 8,
@@ -719,7 +728,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       // -------------------------------------------------------------
       // 7. Living Fish Simulation & Mascot Rendering
       // -------------------------------------------------------------
-      const enableLifeCycle = settings.enableLifeCycle ?? true;
+      const enableLifeCycle = currentSettings.enableLifeCycle ?? true;
       const usedNames = new Set(fishRef.current.map((f) => f.name));
 
       for (let i = fishRef.current.length - 1; i >= 0; i--) {
@@ -897,9 +906,9 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           fish.vy = -Math.abs(fish.vy) * 0.7 - 0.2;
         }
 
-        // Compute swimming angle
-        const targetAngle = Math.atan2(fish.vy, fish.vx);
-        fish.angle = targetAngle;
+        // Compute swimming orientation (horizontal flip + pitch tilt)
+        const { isFacingLeft, pitch } = getFishOrientation(fish.vx, fish.vy);
+        fish.angle = isFacingLeft ? Math.PI - pitch : pitch;
         fish.tailPhase += fish.tailSpeed * (0.8 + speed * 0.8);
 
         // ---------------------------------------------------------
@@ -910,7 +919,10 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           ctx.globalAlpha = Math.max(0, Math.min(1, fish.fadeOpacity));
         }
         ctx.translate(fish.x, fish.y);
-        ctx.rotate(fish.angle);
+        if (isFacingLeft) {
+          ctx.scale(-1, 1);
+        }
+        ctx.rotate(pitch);
 
         // Tail wag sinusoidal calculation
         const tailWag = Math.sin(fish.tailPhase) * 0.28;
@@ -1050,13 +1062,13 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           drawPufferfish(ctx, fish, tailWag, timeSec);
         } else {
           // --- NEON / CARDINAL TETRA ---
-          const len = fish.size;
-          const hgt = fish.size * 0.34;
+          const len = Math.max(1, Math.abs(fish.size));
+          const hgt = Math.max(1, Math.abs(fish.size) * 0.34);
 
           // Upper dark olive-blue spine
           ctx.fillStyle = '#0f293b';
           ctx.beginPath();
-          ctx.ellipse(0, 0, len * 0.5, hgt, 0, 0, Math.PI * 2);
+          ctx.ellipse(0, 0, Math.max(0.1, len * 0.5), Math.max(0.1, hgt), 0, 0, Math.PI * 2);
           ctx.fill();
 
           // Iconic Glowing Neon Cyan Stripe
@@ -1105,7 +1117,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         // 7b. Interactive Nametag on Hover / Always On
         const distToMouse = Math.hypot(fish.x - mouseRef.current.x, fish.y - mouseRef.current.y);
         const isHovered = mouseRef.current.active && distToMouse < Math.max(38, fish.size * 1.5);
-        if (settings.showNametags || isHovered) {
+        if (currentSettings.showNametags || isHovered) {
           drawFishNametag(ctx, fish, isHovered);
         }
       }
@@ -1116,13 +1128,15 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       ctx.save();
       for (let i = ripplesRef.current.length - 1; i >= 0; i--) {
         const rp = ripplesRef.current[i];
-        rp.r += 24 * dt;
+        rp.r = Math.max(0.1, rp.r + 24 * dt);
         rp.opacity -= 0.6 * dt;
 
         ctx.strokeStyle = `rgba(180, 240, 255, ${Math.max(0, rp.opacity)})`;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.ellipse(rp.x, rp.y, rp.r, rp.r * 0.35, 0, 0, Math.PI * 2);
+        const rx = Math.max(0.1, rp.r);
+        const ry = Math.max(0.1, rp.r * 0.35);
+        ctx.ellipse(rp.x, rp.y, rx, ry, 0, 0, Math.PI * 2);
         ctx.stroke();
 
         if (rp.opacity <= 0) {
@@ -1186,7 +1200,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [initAquascape, settings, dropFood]);
+  }, [initAquascape, dropFood, isHeroOnly]);
 
   return (
     <div
