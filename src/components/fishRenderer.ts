@@ -5,6 +5,313 @@ import { getHungerStatus } from './lifeCycleHelper';
 /**
  * Creates an ecosystem school of fish with unique names from the catalog.
  */
+/**
+ * Helper to construct an individual fish particle with authentic biotope parameters.
+ */
+export function createSingleFish(
+  species: FishSpeciesType,
+  id: number,
+  width: number,
+  height: number,
+  usedNames: Set<string>
+): FishParticle {
+  if (species === 'mascot') {
+    const size = 48;
+    return {
+      id,
+      name: getFishName('mascot', usedNames),
+      x: width * 0.35 + Math.random() * (width * 0.3),
+      y: height * 0.35 + Math.random() * (height * 0.3),
+      vx: 1.05,
+      vy: 0.08,
+      size,
+      baseSize: size,
+      type: 'mascot',
+      color: '#0e385e',
+      secondaryColor: '#48b3bf',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.16,
+      hunger: 20,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 6,
+      ageSec: 20,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'angelfish') {
+    const size = 38 + Math.random() * 4;
+    return {
+      id,
+      name: getFishName('angelfish', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.2 + Math.random() * (height * 0.4),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.42 + Math.random() * 0.18),
+      vy: (Math.random() - 0.5) * 0.18,
+      size,
+      baseSize: size,
+      type: 'angelfish',
+      color: '#e2e8f0',
+      secondaryColor: '#334155',
+      accentColor: '#facc15',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.11,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'cherryShrimp') {
+    const size = 13 + Math.random() * 2;
+    return {
+      id,
+      name: getFishName('cherryShrimp', usedNames),
+      x: width * 0.15 + Math.random() * (width * 0.7),
+      y: height - 32 - Math.random() * 10,
+      vx: (Math.random() > 0.5 ? 1 : -1) * 0.35,
+      vy: 0,
+      size,
+      baseSize: size,
+      type: 'cherryShrimp',
+      color: '#ef4444',
+      secondaryColor: '#fca5a5',
+      angle: 0,
+      tailPhase: 0,
+      tailSpeed: 0.1,
+      hunger: 10 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 25,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'rasbora') {
+    const size = 21 + Math.random() * 3;
+    return {
+      id,
+      name: getFishName('rasbora', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.2 + Math.random() * (height * 0.5),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.75 + Math.random() * 0.4),
+      vy: (Math.random() - 0.5) * 0.3,
+      size,
+      baseSize: size,
+      type: 'rasbora',
+      color: '#f97316',
+      secondaryColor: '#0f172a',
+      accentColor: '#dc2626',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.2 + Math.random() * 0.08,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 25,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'guppy') {
+    const guppyTails = ['#06b6d4', '#ec4899', '#8b5cf6', '#f59e0b'];
+    const pickedTail = guppyTails[Math.floor(Math.random() * guppyTails.length)];
+    const size = 25 + Math.random() * 3;
+    return {
+      id,
+      name: getFishName('guppy', usedNames),
+      x: width * 0.15 + Math.random() * (width * 0.7),
+      y: height * 0.15 + Math.random() * (height * 0.45),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.65 + Math.random() * 0.3),
+      vy: (Math.random() - 0.5) * 0.25,
+      size,
+      baseSize: size,
+      type: 'guppy',
+      color: '#cbd5e1',
+      secondaryColor: pickedTail,
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.24,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 25,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'neonTetra') {
+    const size = 18 + Math.random() * 2;
+    return {
+      id,
+      name: getFishName('neonTetra', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.25 + Math.random() * (height * 0.5),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.4),
+      vy: (Math.random() - 0.5) * 0.3,
+      size,
+      baseSize: size,
+      type: 'neonTetra',
+      color: '#00f7ff',
+      secondaryColor: '#ff2b4f',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.22 + Math.random() * 0.1,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 25,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'shark') {
+    const size = 56 + Math.random() * 5;
+    return {
+      id,
+      name: getFishName('shark', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.25 + Math.random() * (height * 0.35),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.25),
+      vy: (Math.random() - 0.5) * 0.18,
+      size,
+      baseSize: size,
+      type: 'shark',
+      color: '#475569',
+      secondaryColor: '#94a3b8',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.14,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'whale') {
+    const size = 88 + Math.random() * 8;
+    return {
+      id,
+      name: getFishName('whale', usedNames),
+      x: width * 0.15 + Math.random() * (width * 0.7),
+      y: height * 0.4 + Math.random() * (height * 0.3),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.35 + Math.random() * 0.15),
+      vy: (Math.random() - 0.5) * 0.1,
+      size,
+      baseSize: size,
+      type: 'whale',
+      color: '#1e293b',
+      secondaryColor: '#38bdf8',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.06,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 35,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'dolphin') {
+    const size = 46 + Math.random() * 4;
+    return {
+      id,
+      name: getFishName('dolphin', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.2 + Math.random() * (height * 0.35),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (1.0 + Math.random() * 0.3),
+      vy: (Math.random() - 0.5) * 0.25,
+      size,
+      baseSize: size,
+      type: 'dolphin',
+      color: '#0284c7',
+      secondaryColor: '#e0f2fe',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.2,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 28,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'mantaRay') {
+    const size = 50 + Math.random() * 4;
+    return {
+      id,
+      name: getFishName('mantaRay', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.35 + Math.random() * (height * 0.3),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.55 + Math.random() * 0.2),
+      vy: (Math.random() - 0.5) * 0.15,
+      size,
+      baseSize: size,
+      type: 'mantaRay',
+      color: '#0f172a',
+      secondaryColor: '#38bdf8',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.10,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'pufferfish') {
+    const size = 27 + Math.random() * 3;
+    return {
+      id,
+      name: getFishName('pufferfish', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.3 + Math.random() * (height * 0.35),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.48 + Math.random() * 0.18),
+      vy: (Math.random() - 0.5) * 0.18,
+      size,
+      baseSize: size,
+      type: 'pufferfish',
+      color: '#eab308',
+      secondaryColor: '#fef08a',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.28,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 25,
+      fadeOpacity: 1.0,
+    };
+  } else {
+    const size = 22;
+    return {
+      id,
+      name: getFishName(species, usedNames),
+      x: width * 0.3 + Math.random() * (width * 0.4),
+      y: height * 0.3 + Math.random() * (height * 0.4),
+      vx: (Math.random() > 0.5 ? 1 : -1) * 0.7,
+      vy: 0,
+      size,
+      baseSize: size,
+      type: species,
+      color: '#38bdf8',
+      angle: 0,
+      tailPhase: 0,
+      tailSpeed: 0.2,
+      hunger: 20,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 25,
+      fadeOpacity: 1.0,
+    };
+  }
+}
+
+/**
+ * Creates an ecosystem school of fish with unique names from the catalog.
+ */
 export function createFishSchool(
   width: number,
   height: number,
@@ -43,321 +350,127 @@ export function createFishSchool(
         ] as FishSpeciesType[]);
 
   let idCounter = 1;
-
-  const spawnSingleFish = (species: FishSpeciesType) => {
-    if (species === 'mascot') {
-      const size = 48;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('mascot', usedNames),
-        x: width * 0.35 + Math.random() * (width * 0.3),
-        y: height * 0.35 + Math.random() * (height * 0.3),
-        vx: 1.05,
-        vy: 0.08,
-        size,
-        baseSize: size,
-        type: 'mascot',
-        color: '#0e385e',
-        secondaryColor: '#48b3bf',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.16,
-        hunger: 20,
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 6,
-        ageSec: 20,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'angelfish') {
-      const size = 38 + Math.random() * 4;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('angelfish', usedNames),
-        x: width * 0.2 + Math.random() * (width * 0.6),
-        y: height * 0.2 + Math.random() * (height * 0.4),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.42 + Math.random() * 0.18),
-        vy: (Math.random() - 0.5) * 0.18,
-        size,
-        baseSize: size,
-        type: 'angelfish',
-        color: '#e2e8f0',
-        secondaryColor: '#334155',
-        accentColor: '#facc15',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.11,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 30,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'cherryShrimp') {
-      const size = 13 + Math.random() * 2;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('cherryShrimp', usedNames),
-        x: width * 0.15 + Math.random() * (width * 0.7),
-        y: height - 32 - Math.random() * 10,
-        vx: (Math.random() > 0.5 ? 1 : -1) * 0.35,
-        vy: 0,
-        size,
-        baseSize: size,
-        type: 'cherryShrimp',
-        color: '#ef4444',
-        secondaryColor: '#fca5a5',
-        angle: 0,
-        tailPhase: 0,
-        tailSpeed: 0.1,
-        hunger: 10 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 25,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'rasbora') {
-      const size = 21 + Math.random() * 3;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('rasbora', usedNames),
-        x: width * 0.2 + Math.random() * (width * 0.6),
-        y: height * 0.2 + Math.random() * (height * 0.5),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.75 + Math.random() * 0.4),
-        vy: (Math.random() - 0.5) * 0.3,
-        size,
-        baseSize: size,
-        type: 'rasbora',
-        color: '#f97316',
-        secondaryColor: '#0f172a',
-        accentColor: '#dc2626',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.2 + Math.random() * 0.08,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 25,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'guppy') {
-      const guppyTails = ['#06b6d4', '#ec4899', '#8b5cf6', '#f59e0b'];
-      const pickedTail = guppyTails[Math.floor(Math.random() * guppyTails.length)];
-      const size = 25 + Math.random() * 3;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('guppy', usedNames),
-        x: width * 0.15 + Math.random() * (width * 0.7),
-        y: height * 0.15 + Math.random() * (height * 0.45),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.65 + Math.random() * 0.3),
-        vy: (Math.random() - 0.5) * 0.25,
-        size,
-        baseSize: size,
-        type: 'guppy',
-        color: '#cbd5e1',
-        secondaryColor: pickedTail,
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.24,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 25,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'neonTetra') {
-      const size = 18 + Math.random() * 2;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('neonTetra', usedNames),
-        x: width * 0.2 + Math.random() * (width * 0.6),
-        y: height * 0.25 + Math.random() * (height * 0.5),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.4),
-        vy: (Math.random() - 0.5) * 0.3,
-        size,
-        baseSize: size,
-        type: 'neonTetra',
-        color: '#00f7ff',
-        secondaryColor: '#ff2b4f',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.22 + Math.random() * 0.1,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 25,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'shark') {
-      const size = 56 + Math.random() * 5;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('shark', usedNames),
-        x: width * 0.2 + Math.random() * (width * 0.6),
-        y: height * 0.25 + Math.random() * (height * 0.35),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.25),
-        vy: (Math.random() - 0.5) * 0.18,
-        size,
-        baseSize: size,
-        type: 'shark',
-        color: '#475569',
-        secondaryColor: '#94a3b8',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.14,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 30,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'whale') {
-      const size = 88 + Math.random() * 8;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('whale', usedNames),
-        x: width * 0.15 + Math.random() * (width * 0.7),
-        y: height * 0.4 + Math.random() * (height * 0.3),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.35 + Math.random() * 0.15),
-        vy: (Math.random() - 0.5) * 0.1,
-        size,
-        baseSize: size,
-        type: 'whale',
-        color: '#1e293b',
-        secondaryColor: '#38bdf8',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.06,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 35,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'dolphin') {
-      const size = 46 + Math.random() * 4;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('dolphin', usedNames),
-        x: width * 0.2 + Math.random() * (width * 0.6),
-        y: height * 0.2 + Math.random() * (height * 0.35),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (1.0 + Math.random() * 0.3),
-        vy: (Math.random() - 0.5) * 0.25,
-        size,
-        baseSize: size,
-        type: 'dolphin',
-        color: '#0284c7',
-        secondaryColor: '#e0f2fe',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.2,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 28,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'mantaRay') {
-      const size = 50 + Math.random() * 4;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('mantaRay', usedNames),
-        x: width * 0.2 + Math.random() * (width * 0.6),
-        y: height * 0.35 + Math.random() * (height * 0.3),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.55 + Math.random() * 0.2),
-        vy: (Math.random() - 0.5) * 0.15,
-        size,
-        baseSize: size,
-        type: 'mantaRay',
-        color: '#0f172a',
-        secondaryColor: '#38bdf8',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.10,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 30,
-        fadeOpacity: 1.0,
-      });
-    } else if (species === 'pufferfish') {
-      const size = 27 + Math.random() * 3;
-      fish.push({
-        id: idCounter++,
-        name: getFishName('pufferfish', usedNames),
-        x: width * 0.2 + Math.random() * (width * 0.6),
-        y: height * 0.3 + Math.random() * (height * 0.35),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.48 + Math.random() * 0.18),
-        vy: (Math.random() - 0.5) * 0.18,
-        size,
-        baseSize: size,
-        type: 'pufferfish',
-        color: '#eab308',
-        secondaryColor: '#fef08a',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.28,
-        hunger: 15 + Math.floor(Math.random() * 15),
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 25,
-        fadeOpacity: 1.0,
-      });
-    } else {
-      const size = 22;
-      fish.push({
-        id: idCounter++,
-        name: getFishName(species, usedNames),
-        x: width * 0.3 + Math.random() * (width * 0.4),
-        y: height * 0.3 + Math.random() * (height * 0.4),
-        vx: (Math.random() > 0.5 ? 1 : -1) * 0.7,
-        vy: 0,
-        size,
-        baseSize: size,
-        type: species,
-        color: '#38bdf8',
-        angle: 0,
-        tailPhase: 0,
-        tailSpeed: 0.2,
-        hunger: 20,
-        eatenCount: 0,
-        stage: 'adult',
-        growthPoints: 5,
-        ageSec: 25,
-        fadeOpacity: 1.0,
-      });
-    }
-  };
-
-  // Ensure targetCount is at least the number of active species so every chosen species is represented
   const targetCount = Math.max(totalCount, speciesList.length);
 
   // Phase 1: Guarantee exactly 1 fish for EVERY active species first
   for (const sp of speciesList) {
     if (fish.length >= targetCount) break;
-    spawnSingleFish(sp);
+    fish.push(createSingleFish(sp, idCounter++, width, height, usedNames));
   }
 
-  // Phase 2: If targetCount > speciesList.length (e.g. user dragged density slider), round-robin fill remaining slots
+  // Phase 2: If targetCount > speciesList.length, round-robin fill remaining slots
   let loopIndex = 0;
   while (fish.length < targetCount) {
     const nextSpecies = speciesList[loopIndex % speciesList.length];
-    spawnSingleFish(nextSpecies);
+    fish.push(createSingleFish(nextSpecies, idCounter++, width, height, usedNames));
     loopIndex++;
   }
 
   return fish;
 }
+
+/**
+ * Synchronizes existing fish school with target density and active species.
+ * CRITICAL: Preserves existing fish, custom names, baby stages, and hunger/growth states (Fixes Bug 2).
+ */
+export function syncFishSchool(
+  existingFish: FishParticle[],
+  totalCount: number = 11,
+  activeSpecies: FishSpeciesType[] = [
+    'mascot',
+    'angelfish',
+    'cherryShrimp',
+    'rasbora',
+    'guppy',
+    'neonTetra',
+    'shark',
+    'whale',
+    'dolphin',
+    'mantaRay',
+    'pufferfish',
+  ],
+  width: number = 800,
+  height: number = 500
+): FishParticle[] {
+  if (!existingFish || existingFish.length === 0) {
+    return createFishSchool(width, height, totalCount, activeSpecies);
+  }
+
+  const speciesList =
+    activeSpecies.length > 0
+      ? activeSpecies
+      : ([
+          'mascot',
+          'angelfish',
+          'cherryShrimp',
+          'rasbora',
+          'guppy',
+          'neonTetra',
+          'shark',
+          'whale',
+          'dolphin',
+          'mantaRay',
+          'pufferfish',
+        ] as FishSpeciesType[]);
+
+  const targetCount = Math.max(totalCount, speciesList.length);
+
+  // 1. Filter existing fish: keep those whose species is still active (always keep mascot)
+  let updatedFish = existingFish.filter(
+    (f) => f.type === 'mascot' || speciesList.includes(f.type)
+  );
+
+  const usedNames = new Set<string>(updatedFish.map((f) => f.name));
+  let maxId = updatedFish.reduce((max, f) => Math.max(max, f.id), 0);
+
+  // 2. If existing fish exceeds targetCount, trim from the end (preserving mascot & baby fish if possible)
+  if (updatedFish.length > targetCount) {
+    const mascotFish = updatedFish.filter((f) => f.type === 'mascot');
+    const nonMascots = updatedFish.filter((f) => f.type !== 'mascot');
+    const allowedNonMascots = Math.max(0, targetCount - mascotFish.length);
+    updatedFish = [...mascotFish, ...nonMascots.slice(0, allowedNonMascots)];
+  }
+
+  // 3. Ensure all active species are represented if we still need more fish
+  const presentSpecies = new Set<FishSpeciesType>(updatedFish.map((f) => f.type));
+  for (const sp of speciesList) {
+    if (updatedFish.length >= targetCount) break;
+    if (!presentSpecies.has(sp)) {
+      maxId++;
+      updatedFish.push(createSingleFish(sp, maxId, width, height, usedNames));
+      presentSpecies.add(sp);
+    }
+  }
+
+  // 4. Fill remaining slots up to targetCount
+  let loopIndex = 0;
+  while (updatedFish.length < targetCount) {
+    const nextSpecies = speciesList[loopIndex % speciesList.length];
+    maxId++;
+    updatedFish.push(createSingleFish(nextSpecies, maxId, width, height, usedNames));
+    loopIndex++;
+  }
+
+  return updatedFish;
+}
+
+/**
+ * Adjusts and clamps fish positions to keep them inside the visible viewport during window resize
+ * without re-creating or destroying existing fish (Fixes Bug 5).
+ */
+export function adjustFishPositionsForResize(
+  fishList: FishParticle[],
+  newWidth: number,
+  newHeight: number
+): void {
+  for (const fish of fishList) {
+    const marginX = Math.max(30, fish.size * 0.75);
+    const marginY = Math.max(35, fish.size * 0.45);
+    fish.x = Math.max(marginX, Math.min(newWidth - marginX, fish.x));
+    fish.y = Math.max(marginY, Math.min(newHeight - marginY, fish.y));
+  }
+}
+
 
 /**
  * Renders Angelfish (Manfish) - majestic centerpiece with tall vertical fins

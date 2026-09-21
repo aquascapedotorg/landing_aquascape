@@ -165,6 +165,15 @@ export function updateFishLifeCycle(
   if (options?.enableLifeCycle) {
     // Mascot is immortal emblem; other fish undergo full natural cycle
     if (fish.type !== 'mascot') {
+      // Natural maturation over time even without kuaci (Fix Bug 6)
+      if (fish.stage === 'baby' && fish.ageSec > 90) {
+        fish.stage = 'juvenile';
+        fish.size = fish.baseSize * getFishStageScale('juvenile');
+      } else if (fish.stage === 'juvenile' && fish.ageSec > 200) {
+        fish.stage = 'adult';
+        fish.size = fish.baseSize * getFishStageScale('adult');
+      }
+
       if (fish.stage === 'adult' && fish.ageSec > 320) {
         fish.stage = 'elderly';
       }

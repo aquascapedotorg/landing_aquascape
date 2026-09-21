@@ -45,8 +45,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add repos.json
-          git diff --cached --quiet || git commit -m "chore: update repos.json [automated]"
+          git add repos.json public/repos.json
+          git diff --cached --quiet || git commit -m "chore: update repos data [automated]"
           git push
 
       - name: Build production site

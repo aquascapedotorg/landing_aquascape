@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { X, Sliders, Tag, Check, RefreshCw, Edit3, RotateCw, PlusCircle } from 'lucide-react';
 import { AquascapeSettings, FishParticle, FishSpeciesType } from '../types';
 import { FISH_CATALOG } from '../data/fishCatalog';
+import { ZEN_CONFIG } from '../data/zenConfig';
 import { getHungerStatus } from './lifeCycleHelper';
+import { aquascapeEvents } from './aquascapeEvents';
 
 interface FishCustomizerProps {
   isOpen: boolean;
@@ -41,12 +43,8 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
 
   // Refresh fish list from canvas
   const refreshList = () => {
-    const getter = (window as unknown as { __aquascapeGetFishList?: () => FishParticle[] })
-      .__aquascapeGetFishList;
-    if (typeof getter === 'function') {
-      const list = getter();
-      setFishList([...list]);
-    }
+    const list = aquascapeEvents.getFishList();
+    setFishList([...list]);
   };
 
   useEffect(() => {
@@ -83,45 +81,22 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
   };
 
   const handleSaveRename = (id: number) => {
-    const renamer = (window as unknown as { __aquascapeRenameFish?: (id: number, name: string) => void })
-      .__aquascapeRenameFish;
-    if (typeof renamer === 'function' && editingName.trim()) {
-      renamer(id, editingName.trim());
+    if (editingName.trim()) {
+      aquascapeEvents.renameFish(id, editingName.trim());
       refreshList();
     }
     setEditingId(null);
   };
 
-  const handleApplyPreset = (preset: 'all' | 'oceanic' | 'schooling' | 'minimalist') => {
-    if (preset === 'all') {
+  const handleApplyPreset = (presetId: string) => {
+    const preset = ZEN_CONFIG.presets.find((p) => p.id === presetId);
+    if (preset) {
       onUpdateSettings({
-        fishDensity: 6,
-        activeSpecies: [
-          'mascot',
-          'mantaRay',
-          'angelfish',
-          'whale',
-          'shark',
-          'guppy',
-        ],
+        fishDensity: preset.density,
+        activeSpecies: preset.activeSpecies,
       });
-    } else if (preset === 'oceanic') {
-      onUpdateSettings({
-        fishDensity: 7,
-        activeSpecies: ['shark', 'whale', 'dolphin', 'mantaRay', 'pufferfish'],
-      });
-    } else if (preset === 'schooling') {
-      onUpdateSettings({
-        fishDensity: 16,
-        activeSpecies: ['neonTetra', 'rasbora', 'guppy'],
-      });
-    } else if (preset === 'minimalist') {
-      onUpdateSettings({
-        fishDensity: 5,
-        activeSpecies: ['mascot', 'angelfish'],
-      });
+      setTimeout(refreshList, 80);
     }
-    setTimeout(refreshList, 80);
   };
 
   return (
@@ -153,34 +128,16 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
               Preset Komposisi
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('all')}
-                className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
-              >
-                Tim AQUASCAPE
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('oceanic')}
-                className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
-              >
-                Samudra Tropis
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('schooling')}
-                className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
-              >
-                Schooling Ramai
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset('minimalist')}
-                className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
-              >
-                Zen Minimalis
-              </button>
+              {ZEN_CONFIG.presets.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handleApplyPreset(preset.id)}
+                  className="px-2 py-1.5 rounded-xl border border-teal-500/20 bg-slate-900/60 hover:bg-teal-500/20 hover:border-teal-400/50 transition-all font-medium text-center cursor-pointer text-slate-200"
+                >
+                  {preset.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -308,14 +265,9 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
               type="button"
               id="btn-spawn-baby-fish"
               onClick={() => {
-                if (
-                  typeof (window as unknown as { __aquascapeSpawnBaby?: () => void }).__aquascapeSpawnBaby ===
-                  'function'
-                ) {
-                  (window as unknown as { __aquascapeSpawnBaby?: () => void }).__aquascapeSpawnBaby?.();
-                  onUpdateSettings({ fishDensity: currentDensity + 1 });
-                  setTimeout(refreshList, 100);
-                }
+                aquascapeEvents.spawnBaby();
+                onUpdateSettings({ fishDensity: currentDensity + 1 });
+                setTimeout(refreshList, 100);
               }}
               className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/40 text-teal-300 font-semibold text-xs transition-all cursor-pointer active:scale-95"
             >

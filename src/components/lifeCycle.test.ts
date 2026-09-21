@@ -112,4 +112,68 @@ describe('Fish Life Cycle & Regeneration System (TDD)', () => {
     const result = updateFishLifeCycle(elderFish, 0.2, { enableLifeCycle: true });
     expect(result.rebornNeeded).toBe(true);
   });
+
+  it('should naturally mature baby fish to juvenile and adult over time without kuaci', () => {
+    const babyFish: FishParticle = {
+      id: 301,
+      name: 'NaturalBaby',
+      x: 200,
+      y: 200,
+      vx: 1,
+      vy: 0,
+      size: 9,
+      baseSize: 20,
+      type: 'neonTetra',
+      color: '#00f7ff',
+      angle: 0,
+      tailPhase: 0,
+      tailSpeed: 0.2,
+      hunger: 10,
+      eatenCount: 0,
+      stage: 'baby',
+      growthPoints: 0,
+      ageSec: 89,
+    };
+
+    // At 89 seconds: still baby
+    updateFishLifeCycle(babyFish, 1, { enableLifeCycle: true });
+    expect(babyFish.stage).toBe('baby');
+
+    // At 91 seconds: matures to juvenile
+    updateFishLifeCycle(babyFish, 1, { enableLifeCycle: true });
+    expect(babyFish.stage).toBe('juvenile');
+
+    // Fast-forward to 201 seconds: matures to adult
+    babyFish.ageSec = 200;
+    updateFishLifeCycle(babyFish, 1, { enableLifeCycle: true });
+    expect(babyFish.stage).toBe('adult');
+  });
+
+  it('should keep mascot immortal without aging or fading', () => {
+    const mascotFish: FishParticle = {
+      id: 1,
+      name: 'Aquascape',
+      x: 200,
+      y: 200,
+      vx: 1,
+      vy: 0,
+      size: 48,
+      baseSize: 48,
+      type: 'mascot',
+      color: '#0e385e',
+      angle: 0,
+      tailPhase: 0,
+      tailSpeed: 0.16,
+      hunger: 10,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 6,
+      ageSec: 2000,
+    };
+
+    const result = updateFishLifeCycle(mascotFish, 10, { enableLifeCycle: true });
+    expect(mascotFish.stage).toBe('adult');
+    expect(result.rebornNeeded).toBe(false);
+  });
 });
+

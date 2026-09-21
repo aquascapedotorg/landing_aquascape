@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { AquascapeSettings, FishParticle, BubbleParticle, FoodParticle, FishSpeciesType } from '../types';
 import { aquascapeAudio } from './AquascapeAudio';
+import { aquascapeEvents } from './aquascapeEvents';
 import {
   createFishSchool,
+  syncFishSchool,
+  adjustFishPositionsForResize,
   drawAngelfish,
   drawRasbora,
   drawGuppy,
@@ -147,9 +150,14 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           'pufferfish',
         ] as FishSpeciesType[]);
 
-    const fish = createFishSchool(width, height, targetDensity, activeSpecies);
-    fishRef.current = fish;
-    setFishCount(fish.length);
+    if (fishRef.current.length === 0) {
+      const fish = createFishSchool(width, height, targetDensity, activeSpecies);
+      fishRef.current = fish;
+      setFishCount(fish.length);
+    } else {
+      adjustFishPositionsForResize(fishRef.current, width, height);
+      setFishCount(fishRef.current.length);
+    }
 
     // 3. Initialize ambient bubbles & CO2 diffuser
     const bubbles: BubbleParticle[] = [];
@@ -253,53 +261,55 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     }
   }, [settings.activeSpecies, onRegenerate]);
 
-  // Expose methods on window for controls and modals
+  const canvasIdRef = useRef<string>(isHeroOnly ? 'hero' : `zen-${Math.random()}`);
+
+  // Register with aquascapeEvents provider
   useEffect(() => {
-    (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood = () => dropFood();
-    (window as unknown as { __aquascapeSpawnBaby?: () => void }).__aquascapeSpawnBaby = () => spawnBaby();
-    (window as unknown as { __aquascapeGetFishList?: () => FishParticle[] }).__aquascapeGetFishList = () => fishRef.current;
-    (window as unknown as { __aquascapeRenameFish?: (id: number, newName: string) => void }).__aquascapeRenameFish = (id: number, newName: string) => {
-      const target = fishRef.current.find((f) => f.id === id);
-      if (target) {
-        target.name = newName;
-      }
-    };
+    const unregister = aquascapeEvents.registerProvider(canvasIdRef.current, {
+      dropFood: (x, y) => dropFood(x, y),
+      spawnBaby: () => spawnBaby(),
+      getFishList: () => fishRef.current,
+      renameFish: (id, newName) => {
+        const target = fishRef.current.find((f) => f.id === id);
+        if (target) {
+          target.name = newName;
+        }
+      },
+    });
 
     return () => {
-      delete (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood;
-      delete (window as unknown as { __aquascapeSpawnBaby?: unknown }).__aquascapeSpawnBaby;
-      delete (window as unknown as { __aquascapeGetFishList?: unknown }).__aquascapeGetFishList;
-      delete (window as unknown as { __aquascapeRenameFish?: unknown }).__aquascapeRenameFish;
+      unregister();
     };
   }, [dropFood, spawnBaby]);
 
   // Dynamically synchronize fish population when density or active species change
   useEffect(() => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    if (canvas.width > 0 && canvas.height > 0) {
-      const defaultDensity = 11;
-      const targetDensity = settings.fishDensity || defaultDensity;
-      const activeSpecies: FishSpeciesType[] =
-        settings.activeSpecies && settings.activeSpecies.length > 0
-          ? settings.activeSpecies
-          : ([
-              'mascot',
-              'angelfish',
-              'cherryShrimp',
-              'rasbora',
-              'guppy',
-              'neonTetra',
-              'shark',
-              'whale',
-              'dolphin',
-              'mantaRay',
-              'pufferfish',
-            ] as FishSpeciesType[]);
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const w = rect.width > 0 ? rect.width : 800;
+    const h = rect.height > 0 ? rect.height : 500;
 
-      fishRef.current = createFishSchool(canvas.width, canvas.height, targetDensity, activeSpecies);
-      setFishCount(fishRef.current.length);
-    }
+    const defaultDensity = 11;
+    const targetDensity = settings.fishDensity || defaultDensity;
+    const activeSpecies: FishSpeciesType[] =
+      settings.activeSpecies && settings.activeSpecies.length > 0
+        ? settings.activeSpecies
+        : ([
+            'mascot',
+            'angelfish',
+            'cherryShrimp',
+            'rasbora',
+            'guppy',
+            'neonTetra',
+            'shark',
+            'whale',
+            'dolphin',
+            'mantaRay',
+            'pufferfish',
+          ] as FishSpeciesType[]);
+
+    fishRef.current = syncFishSchool(fishRef.current, targetDensity, activeSpecies, w, h);
+    setFishCount(fishRef.current.length);
   }, [settings.fishDensity, settings.activeSpecies]);
 
   // Main Canvas animation loop
@@ -340,6 +350,11 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       const timeSec = currentTime * 0.001;
 
       if (!containerRef.current) return;
+      if (isHeroOnly && settings.zenMode) {
+        // Pause Hero animation frame loop while Zen Mode is active to eliminate dual canvas load
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
       const rect = containerRef.current.getBoundingClientRect();
       const w = rect.width;
       const h = rect.height;
@@ -694,8 +709,10 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         // Bersihkan jika sudah dimakan ikan atau menyentuh substrat dasar
         if (flake.eaten || flake.y > h - 35) {
           foodRef.current.splice(i, 1);
-          setFoodCount(foodRef.current.length);
         }
+      }
+      if (foodRef.current.length === 0 && foodCount > 0) {
+        setFoodCount(0);
       }
       ctx.restore();
 

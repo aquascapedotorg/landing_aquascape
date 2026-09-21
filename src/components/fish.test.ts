@@ -11,6 +11,8 @@ import {
   drawDolphin,
   drawMantaRay,
   drawPufferfish,
+  syncFishSchool,
+  adjustFishPositionsForResize,
 } from './fishRenderer';
 
 describe('Fish Fauna & Naming System (TDD)', () => {
@@ -345,4 +347,66 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     expect(mockCtx.fill).toHaveBeenCalled();
     expect(mockCtx.restore).toHaveBeenCalled();
   });
+
+  it('should synchronize fish school when density increases without wiping existing fish or babies', () => {
+    const existingBaby: FishParticle = {
+      id: 999,
+      name: 'Si Imut',
+      x: 150,
+      y: 120,
+      vx: 0.8,
+      vy: 0.1,
+      size: 9,
+      baseSize: 20,
+      type: 'neonTetra',
+      color: '#00f7ff',
+      angle: 0,
+      tailPhase: 0,
+      tailSpeed: 0.2,
+      hunger: 55,
+      eatenCount: 1,
+      stage: 'baby',
+      growthPoints: 1,
+      ageSec: 15,
+    };
+
+    const existingSchool = [
+      ...createFishSchool(800, 500, 4, ['mascot', 'angelfish', 'guppy', 'neonTetra']),
+      existingBaby,
+    ];
+    expect(existingSchool).toHaveLength(5);
+
+    // Increase density from 5 to 7
+    const activeSpecies: FishSpeciesType[] = ['mascot', 'angelfish', 'guppy', 'neonTetra', 'shark'];
+    const synced = syncFishSchool(existingSchool, 7, activeSpecies, 800, 500);
+
+    expect(synced).toHaveLength(7);
+
+    // The baby fish MUST be preserved with all its properties (Fix for Bug 2)
+    const preservedBaby = synced.find((f) => f.id === 999);
+    expect(preservedBaby).toBeDefined();
+    expect(preservedBaby?.name).toBe('Si Imut');
+    expect(preservedBaby?.stage).toBe('baby');
+    expect(preservedBaby?.growthPoints).toBe(1);
+    expect(preservedBaby?.hunger).toBe(55);
+  });
+
+  it('should clamp fish positions during resize without destroying fish identities', () => {
+    const fishList = createFishSchool(1000, 800, 4, ['mascot', 'shark']);
+    fishList[0].x = 950;
+    fishList[0].y = 750;
+    const originalId = fishList[0].id;
+    const originalName = fishList[0].name;
+
+    // Resize canvas to a smaller dimension 400x300
+    adjustFishPositionsForResize(fishList, 400, 300);
+
+    expect(fishList[0].id).toBe(originalId);
+    expect(fishList[0].name).toBe(originalName);
+    expect(fishList[0].x).toBeLessThan(400);
+    expect(fishList[0].y).toBeLessThan(300);
+    expect(fishList[0].x).toBeGreaterThan(0);
+    expect(fishList[0].y).toBeGreaterThan(0);
+  });
 });
+

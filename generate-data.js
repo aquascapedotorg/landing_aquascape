@@ -21,6 +21,7 @@ const __dirname = path.dirname(__filename);
 const ORG_NAME = 'aquascapedotorg';
 const API_BASE = 'https://api.github.com';
 const OUTPUT_FILE = path.join(__dirname, 'repos.json');
+const PUBLIC_OUTPUT_FILE = path.join(__dirname, 'public', 'repos.json');
 
 async function githubFetch(endpoint) {
   const token = process.env.GITHUB_TOKEN;
@@ -111,6 +112,11 @@ async function main() {
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf-8');
   console.log(`Written ${repos.length} repos to ${OUTPUT_FILE}`);
+
+  if (fs.existsSync(path.dirname(PUBLIC_OUTPUT_FILE))) {
+    fs.writeFileSync(PUBLIC_OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf-8');
+    console.log(`Written ${repos.length} repos to ${PUBLIC_OUTPUT_FILE}`);
+  }
 }
 
 main().catch((err) => {

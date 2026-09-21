@@ -9,6 +9,7 @@ import { loadFishNamesCatalog } from './data/fishCatalog';
 import { loadZenConfig, ZEN_CONFIG } from './data/zenConfig';
 import { RepoItem, AquascapeSettings, FishSpeciesType } from './types';
 import { aquascapeAudio } from './components/AquascapeAudio';
+import { aquascapeEvents } from './components/aquascapeEvents';
 import { Search, FolderGit2, Compass, Maximize2, Filter } from 'lucide-react';
 
 export default function App() {
@@ -74,9 +75,7 @@ export default function App() {
   }, []);
 
   const handleFeedFish = useCallback(() => {
-    if (typeof (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood === 'function') {
-      (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood?.();
-    }
+    aquascapeEvents.dropFood();
   }, []);
 
   const handleRegenerate = useCallback((increment: number = 1) => {

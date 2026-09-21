@@ -97,3 +97,13 @@ export interface FoodParticle {
   color: string;
   eaten: boolean;
 }
+
+declare global {
+  interface Window {
+    __aquascapeDropFood?: (x?: number, y?: number) => void;
+    __aquascapeSpawnBaby?: () => void;
+    __aquascapeGetFishList?: () => FishParticle[];
+    __aquascapeRenameFish?: (id: number, newName: string) => void;
+  }
+}
+
