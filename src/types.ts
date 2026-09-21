@@ -25,24 +25,32 @@ export interface AquascapeSettings {
   soundEnabled: boolean;
   zenMode: boolean;
   showFlora: boolean;
+  fishDensity?: number;
+  activeSpecies?: FishSpeciesType[];
+  showNametags?: boolean;
 }
+
+export type FishSpeciesType = 'mascot' | 'neonTetra' | 'cherryShrimp' | 'angelfish' | 'rasbora' | 'guppy';
 
 export interface FishParticle {
   id: number;
+  name: string;
   x: number;
   y: number;
   vx: number;
   vy: number;
   size: number;
-  type: 'mascot' | 'neonTetra' | 'rasbora' | 'cherryShrimp';
+  type: FishSpeciesType;
   color: string;
   secondaryColor?: string;
+  accentColor?: string;
   angle: number;
   tailPhase: number;
   tailSpeed: number;
   targetX?: number;
   targetY?: number;
   hunger?: number;
+  eatenCount?: number;
 }
 
 export interface BubbleParticle {

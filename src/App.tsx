@@ -37,6 +37,9 @@ export default function App() {
     soundEnabled: false,
     zenMode: false,
     showFlora: true,
+    fishDensity: 12,
+    activeSpecies: ['mascot', 'neonTetra', 'cherryShrimp', 'angelfish', 'rasbora', 'guppy'],
+    showNametags: false,
   });
 
   const handleUpdateSettings = useCallback((newSettings: Partial<AquascapeSettings>) => {

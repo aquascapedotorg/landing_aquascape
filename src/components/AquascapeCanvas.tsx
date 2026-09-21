@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { AquascapeSettings, FishParticle, BubbleParticle, FoodParticle } from '../types';
+import { AquascapeSettings, FishParticle, BubbleParticle, FoodParticle, FishSpeciesType } from '../types';
 import { aquascapeAudio } from './AquascapeAudio';
+import {
+  createFishSchool,
+  drawAngelfish,
+  drawRasbora,
+  drawGuppy,
+  drawFishNametag,
+} from './fishRenderer';
 
 interface CanvasProps {
   settings: AquascapeSettings;
@@ -108,63 +115,14 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
     plantsRef.current = plants;
 
-    // 2. Initialize Fish
-    const fish: FishParticle[] = [];
+    // 2. Initialize Fish with custom density and species
+    const defaultDensity = Math.min(16, Math.max(8, Math.floor(width / 110)));
+    const targetDensity = settings.fishDensity || defaultDensity;
+    const activeSpecies: FishSpeciesType[] = settings.activeSpecies && settings.activeSpecies.length > 0
+      ? settings.activeSpecies
+      : (['mascot', 'neonTetra', 'cherryShrimp', 'angelfish', 'rasbora', 'guppy'] as FishSpeciesType[]);
 
-    // The Flagship Mascot Fish (Origami Aquascape Fish)
-    fish.push({
-      id: 1,
-      x: width * 0.4,
-      y: height * 0.45,
-      vx: 1.2,
-      vy: 0.1,
-      size: 42,
-      type: 'mascot',
-      color: '#0e385e',
-      secondaryColor: '#48b3bf',
-      angle: 0,
-      tailPhase: 0,
-      tailSpeed: 0.18,
-      hunger: 0,
-    });
-
-    // School of Neon / Cardinal Tetras
-    const tetraCount = Math.min(10, Math.max(5, Math.floor(width / 130)));
-    for (let i = 0; i < tetraCount; i++) {
-      fish.push({
-        id: i + 2,
-        x: width * 0.25 + Math.random() * (width * 0.5),
-        y: height * 0.25 + Math.random() * (height * 0.5),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.8),
-        vy: (Math.random() - 0.5) * 0.4,
-        size: 16 + Math.random() * 6,
-        type: 'neonTetra',
-        color: '#00f0ff',
-        secondaryColor: '#ff2a55',
-        angle: 0,
-        tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.25 + Math.random() * 0.15,
-        hunger: 0,
-      });
-    }
-
-    // A tiny cute Cherry Shrimp on the substrate/wood
-    fish.push({
-      id: 999,
-      x: width * 0.22,
-      y: height - 35,
-      vx: 0.3,
-      vy: 0,
-      size: 14,
-      type: 'cherryShrimp',
-      color: '#ef4444',
-      secondaryColor: '#fca5a5',
-      angle: 0,
-      tailPhase: 0,
-      tailSpeed: 0.1,
-      hunger: 0,
-    });
-
+    const fish = createFishSchool(width, height, targetDensity, activeSpecies);
     fishRef.current = fish;
     setFishCount(fish.length);
 
@@ -235,13 +193,39 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     aquascapeAudio.playBubblePop();
   }, []);
 
-  // Expose dropFood method on window for controls
+  // Expose methods on window for controls and modals
   useEffect(() => {
     (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood = () => dropFood();
+    (window as unknown as { __aquascapeGetFishList?: () => FishParticle[] }).__aquascapeGetFishList = () => fishRef.current;
+    (window as unknown as { __aquascapeRenameFish?: (id: number, newName: string) => void }).__aquascapeRenameFish = (id: number, newName: string) => {
+      const target = fishRef.current.find((f) => f.id === id);
+      if (target) {
+        target.name = newName;
+      }
+    };
+
     return () => {
       delete (window as unknown as { __aquascapeDropFood?: () => void }).__aquascapeDropFood;
+      delete (window as unknown as { __aquascapeGetFishList?: unknown }).__aquascapeGetFishList;
+      delete (window as unknown as { __aquascapeRenameFish?: unknown }).__aquascapeRenameFish;
     };
   }, [dropFood]);
+
+  // Dynamically synchronize fish population when density or active species change
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (canvas.width > 0 && canvas.height > 0) {
+      const defaultDensity = Math.min(16, Math.max(8, Math.floor(canvas.width / 110)));
+      const targetDensity = settings.fishDensity || defaultDensity;
+      const activeSpecies: FishSpeciesType[] = settings.activeSpecies && settings.activeSpecies.length > 0
+        ? settings.activeSpecies
+        : (['mascot', 'neonTetra', 'cherryShrimp', 'angelfish', 'rasbora', 'guppy'] as FishSpeciesType[]);
+
+      fishRef.current = createFishSchool(canvas.width, canvas.height, targetDensity, activeSpecies);
+      setFishCount(fishRef.current.length);
+    }
+  }, [settings.fishDensity, settings.activeSpecies]);
 
   // Main Canvas animation loop
   useEffect(() => {
@@ -669,6 +653,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           // Eat food when close
           if (dist < fish.size * 0.6) {
             (targetFood as FoodParticle).eaten = true;
+            fish.eatenCount = (fish.eatenCount || 0) + 1;
             // Little eating ripple
             ripplesRef.current.push({
               x: fish.x,
@@ -700,13 +685,22 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
             fish.vx = Math.sin(timeSec * 0.8) * 0.4;
             fish.vy = 0;
             fish.y = Math.min(h - 36, Math.max(h - 110, fish.y));
+          } else if (fish.type === 'angelfish') {
+            // Majestic slow glide in mid-upper column
+            fish.vx += (Math.random() - 0.5) * 0.04;
+            fish.vy += (Math.random() - 0.5) * 0.03;
+            if (fish.y > h * 0.65) fish.vy -= 0.06;
+            if (fish.y < h * 0.15) fish.vy += 0.06;
+          } else if (fish.type === 'guppy') {
+            // Active surface/mid swimming
+            fish.vx += (Math.random() - 0.5) * 0.08;
+            fish.vy += (Math.random() - 0.5) * 0.07;
+            if (fish.y > h * 0.55) fish.vy -= 0.07;
+            if (fish.y < h * 0.12) fish.vy += 0.07;
           } else {
-            // Neon Tetra schooling behavior
-            // Maintain depth
+            // Neon Tetra and Rasbora schooling behavior
             if (fish.y < h * 0.18) fish.vy += 0.06;
             if (fish.y > h * 0.8) fish.vy -= 0.06;
-
-            // Subtle attraction to other tetras
             fish.vx += (Math.random() - 0.5) * 0.1;
             fish.vy += (Math.random() - 0.5) * 0.08;
           }
@@ -714,7 +708,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
         // Clamp speed
         const speed = Math.hypot(fish.vx, fish.vy);
-        const maxSpeed = fish.type === 'mascot' ? 2.2 : 3.0;
+        const maxSpeed = fish.type === 'angelfish' ? 1.6 : fish.type === 'mascot' ? 2.2 : 3.0;
         if (speed > maxSpeed) {
           fish.vx = (fish.vx / speed) * maxSpeed;
           fish.vy = (fish.vy / speed) * maxSpeed;
@@ -862,6 +856,15 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           ctx.moveTo(2, 3);
           ctx.lineTo(0, 6);
           ctx.stroke();
+        } else if (fish.type === 'angelfish') {
+          // --- ANGELFISH (MANFISH) ---
+          drawAngelfish(ctx, fish, tailWag);
+        } else if (fish.type === 'rasbora') {
+          // --- HARLEQUIN RASBORA ---
+          drawRasbora(ctx, fish, tailWag);
+        } else if (fish.type === 'guppy') {
+          // --- FANCY GUPPY ---
+          drawGuppy(ctx, fish, tailWag, timeSec);
         } else {
           // --- NEON / CARDINAL TETRA ---
           const len = fish.size;
@@ -915,6 +918,13 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         }
 
         ctx.restore();
+
+        // 7b. Interactive Nametag on Hover / Always On
+        const distToMouse = Math.hypot(fish.x - mouseRef.current.x, fish.y - mouseRef.current.y);
+        const isHovered = mouseRef.current.active && distToMouse < Math.max(38, fish.size * 1.5);
+        if (settings.showNametags || isHovered) {
+          drawFishNametag(ctx, fish, isHovered);
+        }
       });
 
       // -------------------------------------------------------------

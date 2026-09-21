@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AquascapeCanvas } from './AquascapeCanvas';
 import { AquascapeControls } from './AquascapeControls';
+import { FishCustomizerModal } from './FishCustomizerModal';
 import { AquascapeSettings } from '../types';
-import { Minimize2, Info, Droplets, Thermometer, Activity } from 'lucide-react';
+import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders } from 'lucide-react';
 
 interface ZenProps {
   isOpen: boolean;
@@ -19,10 +20,16 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
   onUpdateSettings,
   onFeedFish,
 }) => {
+  const [isFaunaModalOpen, setIsFaunaModalOpen] = useState(false);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        if (isFaunaModalOpen) {
+          setIsFaunaModalOpen(false);
+        } else {
+          onClose();
+        }
       }
     };
     if (isOpen) {
@@ -33,7 +40,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isFaunaModalOpen]);
 
   if (!isOpen) return null;
 
@@ -77,16 +84,30 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
             </div>
           </div>
 
-          {/* Close Zen Button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="pointer-events-auto flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold text-xs hover:bg-teal-400 transition-all shadow-lg shadow-teal-500/30 cursor-pointer active:scale-95"
-            title="Tutup Mode Zen (ESC)"
-          >
-            <Minimize2 className="w-4 h-4" />
-            <span>Kembali ke Proyek</span>
-          </button>
+          {/* Top Actions: Fauna Settings & Close Zen */}
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <button
+              type="button"
+              id="btn-zen-fauna-settings"
+              onClick={() => setIsFaunaModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-teal-500/30 text-teal-300 font-semibold text-xs transition-all shadow-lg cursor-pointer active:scale-95 backdrop-blur-md"
+              title="Atur Jenis Ikan, Kepadatan & Nama Ikan"
+            >
+              <Sliders className="w-4 h-4 text-teal-400" />
+              <span className="hidden sm:inline">Fauna & Nama Ikan</span>
+            </button>
+
+            {/* Close Zen Button */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold text-xs hover:bg-teal-400 transition-all shadow-lg shadow-teal-500/30 cursor-pointer active:scale-95"
+              title="Tutup Mode Zen (ESC)"
+            >
+              <Minimize2 className="w-4 h-4" />
+              <span>Kembali ke Proyek</span>
+            </button>
+          </div>
         </div>
 
         {/* Floating Bottom Aquascape Controls */}
@@ -100,10 +121,19 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
           </div>
           <p className="text-xs text-white/70 font-mono flex items-center gap-1.5 drop-shadow bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">
             <Info className="w-3.5 h-3.5 text-teal-400" />
-            <span>Klik di mana saja pada aquarium untuk menyebarkan pakan ikan & menciptakan riak air alami</span>
+            <span>Klik di mana saja pada aquarium untuk menyebarkan kuaci & menciptakan riak air alami</span>
           </p>
         </div>
       </div>
+
+      {/* Fauna & Fish Customizer Modal */}
+      <FishCustomizerModal
+        isOpen={isFaunaModalOpen}
+        onClose={() => setIsFaunaModalOpen(false)}
+        settings={settings}
+        onUpdateSettings={onUpdateSettings}
+      />
     </div>
   );
 };
+
