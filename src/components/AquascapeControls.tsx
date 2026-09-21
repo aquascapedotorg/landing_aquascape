@@ -2,6 +2,7 @@ import React from 'react';
 import { Sun, Moon, Sunset, Layers, Wind, Volume2, VolumeX, Maximize2, Minimize2, Fish } from 'lucide-react';
 import { AquascapeSettings, LightingMode } from '../types';
 import { aquascapeAudio } from './AquascapeAudio';
+import { KuaciIcon } from './KuaciIcon';
 
 interface ControlsProps {
   settings: AquascapeSettings;
@@ -38,17 +39,17 @@ export const AquascapeControls: React.FC<ControlsProps> = ({
     <div
       className={`inline-flex flex-wrap items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-[#09131d]/85 backdrop-blur-md rounded-2xl border border-teal-500/25 shadow-xl shadow-cyan-950/40 ${className}`}
     >
-      {/* 1. Feed Fish Button */}
+      {/* 1. Feed Fish / Tabur Kuaci Button */}
       <button
         type="button"
         id="btn-feed-fish"
         onClick={onFeedFish}
-        className="group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-teal-500/25 to-emerald-500/25 border border-teal-400/40 text-teal-200 hover:text-white hover:border-teal-300 hover:from-teal-500/40 hover:to-emerald-500/40 transition-all active:scale-95 cursor-pointer shadow-sm"
-        title="Beri makan ikan aquascape (Klik juga bisa di kanvas)"
+        className="group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-teal-500/25 to-emerald-500/25 border border-teal-400/40 text-teal-200 hover:text-white hover:border-teal-300 transition-all active:scale-95 cursor-pointer shadow-sm"
+        title="Taburkan kuaci ke dalam aquascape (Bisa juga langsung klik di kanvas)"
       >
-        <Fish className="w-3.5 h-3.5 text-teal-300 group-hover:rotate-12 transition-transform" />
-        <span>Beri Makan</span>
-        <span className="hidden sm:inline text-[10px] opacity-70">Pakan</span>
+        <KuaciIcon className="w-3.5 h-3.5 text-teal-300 group-hover:rotate-12 transition-transform" />
+        <span>Tabur Kuaci</span>
+        <span className="hidden sm:inline text-[10px] opacity-70">Kuaci</span>
       </button>
 
       {/* 2. Lighting Mode Switcher */}

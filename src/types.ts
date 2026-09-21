@@ -64,6 +64,9 @@ export interface FoodParticle {
   vy: number;
   vx: number;
   size: number;
+  angle: number;                           // Sudut rotasi saat melayang
+  vRot: number;                            // Kecepatan putar di air
+  seedType: 'striped' | 'black' | 'kernel';// Variasi cangkang kuaci
   color: string;
   eaten: boolean;
 }

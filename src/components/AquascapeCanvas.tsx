@@ -195,15 +195,23 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
     const newFood: FoodParticle[] = [];
     const count = 4 + Math.floor(Math.random() * 3);
+
     for (let i = 0; i < count; i++) {
+      const typeRand = Math.random();
+      const seedType: 'striped' | 'black' | 'kernel' =
+        typeRand < 0.65 ? 'striped' : typeRand < 0.88 ? 'black' : 'kernel';
+
       newFood.push({
         id: Math.random(),
-        x: dropX + (Math.random() * 30 - 15),
+        x: dropX + (Math.random() * 34 - 17),
         y: dropY + Math.random() * 10,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: 0.6 + Math.random() * 0.7,
-        size: 3 + Math.random() * 2.5,
-        color: Math.random() > 0.5 ? '#f59e0b' : '#ef4444',
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: 0.45 + Math.random() * 0.35,
+        size: 5 + Math.random() * 2.2,
+        angle: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 2.4,
+        seedType,
+        color: seedType === 'kernel' ? '#fef08a' : seedType === 'striped' ? '#18202c' : '#0b0f17',
         eaten: false,
       });
     }
@@ -551,20 +559,80 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       ctx.restore();
 
       // -------------------------------------------------------------
-      // 6. Food Flakes Logic
+      // 6. Kuaci (Sunflower Seeds) Sinking & Physics Logic
       // -------------------------------------------------------------
       ctx.save();
       for (let i = foodRef.current.length - 1; i >= 0; i--) {
         const flake = foodRef.current[i];
         flake.y += flake.vy * dt * 45;
-        flake.x += Math.sin(timeSec * 2 + flake.id) * 0.4;
+        flake.x += Math.sin(timeSec * 2.5 + flake.id * 8) * 0.35 + flake.vx;
+        flake.angle += flake.vRot * dt;
 
-        ctx.fillStyle = flake.color;
-        ctx.beginPath();
-        ctx.ellipse(flake.x, flake.y, flake.size, flake.size * 0.6, Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.save();
+        ctx.translate(flake.x, flake.y);
+        ctx.rotate(flake.angle);
 
-        // Check if eaten or hits bottom
+        const len = flake.size;
+        const w = flake.size * 0.52;
+
+        if (flake.seedType === 'kernel') {
+          // Inti biji kuaci kupas (Roasted golden kernel)
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.moveTo(0, -len * 0.85);
+          ctx.bezierCurveTo(w * 0.8, -len * 0.3, w * 0.8, len * 0.7, 0, len * 0.85);
+          ctx.bezierCurveTo(-w * 0.8, len * 0.7, -w * 0.8, -len * 0.3, 0, -len * 0.85);
+          ctx.fill();
+
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, w * 0.3, len * 0.4, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Cangkang kuaci bunga matahari (Classic pointed sunflower seed)
+          ctx.fillStyle = flake.seedType === 'striped' ? '#18202c' : '#0b0f17';
+          ctx.beginPath();
+          ctx.moveTo(0, -len);
+          ctx.bezierCurveTo(w, -len * 0.3, w * 0.95, len * 0.7, 0, len * 0.85);
+          ctx.bezierCurveTo(-w * 0.95, len * 0.7, -w, -len * 0.3, 0, -len);
+          ctx.fill();
+
+          // Bingkai tepi cangkang
+          ctx.strokeStyle = '#334155';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+
+          // Garis putih khas kuaci (Lengthwise stripes)
+          if (flake.seedType === 'striped') {
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 0.7;
+            ctx.lineCap = 'round';
+
+            // Garis kiri
+            ctx.beginPath();
+            ctx.moveTo(0, -len * 0.75);
+            ctx.quadraticCurveTo(-w * 0.45, 0, 0, len * 0.7);
+            ctx.stroke();
+
+            // Garis kanan
+            ctx.beginPath();
+            ctx.moveTo(0, -len * 0.75);
+            ctx.quadraticCurveTo(w * 0.45, 0, 0, len * 0.7);
+            ctx.stroke();
+          }
+
+          // Garis belahan tengah cangkang
+          ctx.strokeStyle = flake.seedType === 'striped' ? '#94a3b8' : '#475569';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(0, -len * 0.85);
+          ctx.lineTo(0, len * 0.75);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+
+        // Bersihkan jika sudah dimakan ikan atau menyentuh substrat dasar
         if (flake.eaten || flake.y > h - 35) {
           foodRef.current.splice(i, 1);
           setFoodCount(foodRef.current.length);
@@ -935,7 +1003,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full cursor-crosshair"
-        title="Klik di mana saja di dalam aquascape untuk memberi makan ikan & memicu riak air!"
+        title="Klik di mana saja di dalam aquascape untuk menabur kuaci & memicu riak air!"
       />
 
       {/* Floating subtle overlay status */}
@@ -945,7 +1013,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           <span>Biotope: Nature Aquascape</span>
           <span>•</span>
           <span>Ikan: {fishCount}</span>
-          {foodCount > 0 && <span>• Pakan: {foodCount}</span>}
+          {foodCount > 0 && <span>• Kuaci: {foodCount}</span>}
         </div>
       )}
     </div>

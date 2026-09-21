@@ -80,7 +80,7 @@ export const Hero: React.FC<HeroProps> = ({
           />
           <p className="text-[11px] text-teal-300/80 font-mono flex items-center gap-1.5 drop-shadow">
             <Info className="w-3 h-3 text-teal-400" />
-            <span>Klik di kanvas atau tekan &quot;Beri Makan&quot; untuk berinteraksi langsung dengan ikan maskot!</span>
+            <span>Klik di kanvas atau tekan &quot;Tabur Kuaci&quot; untuk berinteraksi langsung dengan ikan maskot!</span>
           </p>
         </div>
 
