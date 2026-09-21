@@ -1,3 +1,4 @@
+import rawFishNames from '../../public/fish-names.json';
 import { FishSpeciesType } from '../types';
 
 export interface FishSpeciesDefinition {
@@ -16,119 +17,9 @@ export interface FishCatalogData {
 }
 
 export const FISH_CATALOG: FishCatalogData = {
-  version: "1.1.0",
-  species: [
-    {
-      id: "mascot",
-      name: "Origami Aquascape",
-      scientificName: "Aquascapus symbolicus",
-      category: "Mascot",
-      description: "Maskot resmi tim AQUASCAPE berwujud ikan origami geometris yang anggun.",
-      defaultNames: ["Andreas", "Aquo", "Nexus", "Vector", "Zenith"]
-    },
-    {
-      id: "neonTetra",
-      name: "Neon Tetra",
-      scientificName: "Paracheirodon innesi",
-      category: "Schooling",
-      description: "Ikan schooling mungil dengan garis neon cyan berpendar dan ekor merah cerah.",
-      defaultNames: ["Piki", "Cyan", "Flash", "Glowy", "Spark", "Lumi"]
-    },
-    {
-      id: "cherryShrimp",
-      name: "Cherry Shrimp",
-      scientificName: "Neocaridina davidi",
-      category: "Invertebrata",
-      description: "Udang hias merah delima imut yang rajin menjelajah kayu dan substrat dasar.",
-      defaultNames: ["Fahrudin", "Ruby", "Crimson", "Garnet", "Scarlet"]
-    },
-    {
-      id: "angelfish",
-      name: "Manfish (Angelfish)",
-      scientificName: "Pterophyllum scalare",
-      category: "Centerpiece",
-      description: "Ikan anggun bertubuh pipih tinggi dengan sirip menjulang megah layaknya bidadari air.",
-      defaultNames: ["Amsal", "Gabriel", "Michael", "Rafael", "Serafim"]
-    },
-    {
-      id: "rasbora",
-      name: "Harlequin Rasbora",
-      scientificName: "Trigonostigma heteromorpha",
-      category: "Schooling",
-      description: "Ikan aquascape legendaris bertubuh jingga tembaga dengan corak segitiga hitam pekat.",
-      defaultNames: ["Pandu", "Copper", "Ember", "Rusty", "Blaze"]
-    },
-    {
-      id: "guppy",
-      name: "Fancy Guppy",
-      scientificName: "Poecilia reticulata",
-      category: "Surface / Mid",
-      description: "Ikan lincah dengan ekor kipas lebar berkilau yang berombak indah mengikuti arus.",
-      defaultNames: ["Fransisca", "Rainbow", "Aurora", "Melody", "Flora"]
-    },
-    {
-      id: "shark",
-      name: "Hiu",
-      scientificName: "Carcharodon carcharias",
-      category: "Apex Pelagic",
-      description: "Predator puncak bertubuh hidrodinamis baja dengan sirip punggung tajam dan gerak renang gesit.",
-      defaultNames: ["Baron", "Apex", "Titan", "Hunter", "Razor"]
-    },
-    {
-      id: "whale",
-      name: "Paus",
-      scientificName: "Balaenoptera musculus",
-      category: "Oceanic Giant",
-      description: "Raksasa samudra berenang tenang dengan tubuh megah beralur dan kibasan ekor lambat berwibawa.",
-      defaultNames: ["Leviathan", "Atlas", "Echo", "Nautilus", "Orion"]
-    },
-    {
-      id: "dolphin",
-      name: "Lumba-lumba",
-      scientificName: "Delphinus delphis",
-      category: "Marine Mammal",
-      description: "Biota cerdas lincah dengan moncong botol khas dan gaya renang meliuk bergelombang penuh pesona.",
-      defaultNames: ["Delta", "Aero", "Glider", "Flipper", "Breeze"]
-    },
-    {
-      id: "mantaRay",
-      name: "Ikan Pari",
-      scientificName: "Mobula alfredi",
-      category: "Benthic / Pelagic",
-      description: "Ikan pari anggun bersayap pektoral lebar yang melayang halus di atas tanaman air laksana burung laut.",
-      defaultNames: ["Phantom", "Ray", "Shadow", "Vortex", "Abyss"]
-    },
-    {
-      id: "pufferfish",
-      name: "Ikan Buntal",
-      scientificName: "Tetraodontidae",
-      category: "Special Biotope",
-      description: "Ikan bulat imut dengan sirip samping bergetar cepat yang dapat mengembang saat kenyang atau waspada.",
-      defaultNames: ["Spike", "Bubu", "Puff", "Boba", "Gembul"]
-    }
-  ],
-  namePool: [
-    "Pandu",
-    "Andreas",
-    "Fahrudin",
-    "Fransisca",
-    "Amsal",
-    "Bima",
-    "Arjuna",
-    "Citra",
-    "Dewi",
-    "Guntur",
-    "Bayu",
-    "Samudra",
-    "Kirana",
-    "Surya",
-    "Mentari",
-    "Rinjani",
-    "Baruna",
-    "Cahaya",
-    "Nusantara",
-    "Galang"
-  ]
+  version: rawFishNames.version,
+  species: rawFishNames.species as unknown as FishSpeciesDefinition[],
+  namePool: [...rawFishNames.namePool],
 };
 
 /**

@@ -49,18 +49,18 @@ export default function App() {
       });
   }, []);
 
-  // Aquascape simulation settings state
+  // Aquascape simulation settings state initialized directly from ZEN_CONFIG (which imports zen-config.json)
   const [settings, setSettings] = useState<AquascapeSettings>({
-    lighting: 'daylight',
-    co2Active: true,
-    waterFlow: 'normal',
-    soundEnabled: false,
+    lighting: ZEN_CONFIG.defaults.lighting,
+    co2Active: ZEN_CONFIG.defaults.co2Active,
+    waterFlow: ZEN_CONFIG.defaults.waterFlow,
+    soundEnabled: ZEN_CONFIG.defaults.soundEnabled,
     zenMode: false,
-    showFlora: true,
-    fishDensity: 5,
-    activeSpecies: ['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'],
-    showNametags: true,
-    enableLifeCycle: true,
+    showFlora: ZEN_CONFIG.defaults.showFlora,
+    fishDensity: ZEN_CONFIG.defaults.fishDensity,
+    activeSpecies: ZEN_CONFIG.defaults.activeSpecies,
+    showNametags: ZEN_CONFIG.defaults.showNametags,
+    enableLifeCycle: ZEN_CONFIG.defaults.enableLifeCycle,
     totalRegenerations: 0,
   });
 

@@ -1,4 +1,5 @@
-import { AquascapeSettings, FishSpeciesType } from '../types';
+import rawZenConfig from '../../public/zen-config.json';
+import { FishSpeciesType } from '../types';
 
 export interface ZenPreset {
   id: string;
@@ -30,56 +31,16 @@ export interface ZenConfigData {
 }
 
 export const ZEN_CONFIG: ZenConfigData = {
-  version: "1.0.0",
-  name: "AQUASCAPE Zen Aquarium Configuration",
+  version: rawZenConfig.version,
+  name: rawZenConfig.name,
   defaults: {
-    lighting: "daylight",
-    co2Active: true,
-    waterFlow: "normal",
-    soundEnabled: false,
-    showFlora: true,
-    showNametags: true,
-    enableLifeCycle: true,
-    fishDensity: 5,
-    activeSpecies: [
-      "mascot",
-      "angelfish",
-      "cherryShrimp",
-      "rasbora",
-      "guppy"
-    ]
+    ...rawZenConfig.defaults,
+    activeSpecies: rawZenConfig.defaults.activeSpecies as FishSpeciesType[],
+    lighting: rawZenConfig.defaults.lighting as 'daylight' | 'moonlight' | 'golden',
+    waterFlow: rawZenConfig.defaults.waterFlow as 'calm' | 'normal' | 'lively',
   },
-  telemetry: {
-    temperature: "24.8°C",
-    ph: "pH 6.6",
-    co2: "CO2 ~28ppm"
-  },
-  presets: [
-    {
-      id: "team",
-      label: "Tim Inti AQUASCAPE",
-      density: 5,
-      activeSpecies: ["mascot", "angelfish", "cherryShrimp", "rasbora", "guppy"]
-    },
-    {
-      id: "oceanic",
-      label: "Samudra Tropis (Hiu, Paus & Pari)",
-      density: 5,
-      activeSpecies: ["shark", "whale", "dolphin", "mantaRay", "pufferfish"]
-    },
-    {
-      id: "schooling",
-      label: "Schooling Ramai",
-      density: 15,
-      activeSpecies: ["neonTetra", "rasbora", "guppy", "pufferfish"]
-    },
-    {
-      id: "minimalist",
-      label: "Zen Minimalis",
-      density: 2,
-      activeSpecies: ["mascot", "whale"]
-    }
-  ]
+  telemetry: rawZenConfig.telemetry,
+  presets: rawZenConfig.presets as unknown as ZenPreset[],
 };
 
 /**

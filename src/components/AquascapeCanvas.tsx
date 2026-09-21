@@ -129,11 +129,23 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     plantsRef.current = plants;
 
     // 2. Initialize Fish with custom density and species
-    const defaultDensity = 5;
+    const defaultDensity = 11;
     const targetDensity = settings.fishDensity ?? defaultDensity;
     const activeSpecies: FishSpeciesType[] = settings.activeSpecies && settings.activeSpecies.length > 0
       ? settings.activeSpecies
-      : (['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'] as FishSpeciesType[]);
+      : ([
+          'mascot',
+          'angelfish',
+          'cherryShrimp',
+          'rasbora',
+          'guppy',
+          'neonTetra',
+          'shark',
+          'whale',
+          'dolphin',
+          'mantaRay',
+          'pufferfish',
+        ] as FishSpeciesType[]);
 
     const fish = createFishSchool(width, height, targetDensity, activeSpecies);
     fishRef.current = fish;
@@ -266,12 +278,24 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     if (canvas.width > 0 && canvas.height > 0) {
-      const defaultDensity = 5;
+      const defaultDensity = 11;
       const targetDensity = settings.fishDensity || defaultDensity;
       const activeSpecies: FishSpeciesType[] =
         settings.activeSpecies && settings.activeSpecies.length > 0
           ? settings.activeSpecies
-          : (['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'] as FishSpeciesType[]);
+          : ([
+              'mascot',
+              'angelfish',
+              'cherryShrimp',
+              'rasbora',
+              'guppy',
+              'neonTetra',
+              'shark',
+              'whale',
+              'dolphin',
+              'mantaRay',
+              'pufferfish',
+            ] as FishSpeciesType[]);
 
       fishRef.current = createFishSchool(canvas.width, canvas.height, targetDensity, activeSpecies);
       setFishCount(fishRef.current.length);
@@ -841,17 +865,18 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         fish.x += fish.vx * flowMultiplier;
         fish.y += fish.vy * flowMultiplier;
 
-        // Boundary reflection with smooth turning
-        const margin = 35;
-        if (fish.x < margin) {
+        // Boundary reflection with smooth turning proportional to fish size
+        const marginX = Math.max(35, fish.size * 0.75);
+        const marginY = Math.max(45, fish.size * 0.45);
+        if (fish.x < marginX) {
           fish.vx = Math.abs(fish.vx) * 0.8 + 0.3;
-        } else if (fish.x > w - margin) {
+        } else if (fish.x > w - marginX) {
           fish.vx = -Math.abs(fish.vx) * 0.8 - 0.3;
         }
 
-        if (fish.y < 45) {
+        if (fish.y < marginY) {
           fish.vy = Math.abs(fish.vy) * 0.7 + 0.2;
-        } else if (fish.y > h - 45) {
+        } else if (fish.y > h - marginY) {
           fish.vy = -Math.abs(fish.vy) * 0.7 - 0.2;
         }
 
@@ -875,7 +900,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
         if (fish.type === 'mascot') {
           // --- AQUASCAPE MASCOT ORIGAMI FISH ---
-          const scale = fish.size / 70;
+          const scale = fish.size / 65;
           ctx.scale(scale, scale);
 
           // Shadow / ambient underwater glow under mascot

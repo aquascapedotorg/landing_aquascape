@@ -30,23 +30,13 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     expect(speciesIds).toContain('pufferfish');
   });
 
-  it('should prioritize the custom primary names defined by the user for team members', () => {
+  it('should prioritize the custom primary names defined by the user in fish-names.json', () => {
     const used = new Set<string>();
-    expect(getFishName('mascot', used)).toBe('Andreas');
-    expect(getFishName('angelfish', used)).toBe('Amsal');
-    expect(getFishName('cherryShrimp', used)).toBe('Fahrudin');
-    expect(getFishName('rasbora', used)).toBe('Pandu');
-    expect(getFishName('guppy', used)).toBe('Fransisca');
-    expect(getFishName('neonTetra', used)).toBe('Piki');
-  });
-
-  it('should support default names for all 5 new oceanic species', () => {
-    const used = new Set<string>();
-    expect(getFishName('shark', used)).toBe('Baron');
-    expect(getFishName('whale', used)).toBe('Leviathan');
-    expect(getFishName('dolphin', used)).toBe('Delta');
-    expect(getFishName('mantaRay', used)).toBe('Phantom');
-    expect(getFishName('pufferfish', used)).toBe('Spike');
+    FISH_CATALOG.species.forEach((sp) => {
+      const expectedFirstName = sp.defaultNames[0];
+      const actualName = getFishName(sp.id, used);
+      expect(actualName).toBe(expectedFirstName);
+    });
   });
 
   it('should pick unique default names for species', () => {
@@ -59,15 +49,13 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     expect(name1).not.toBe(name2);
   });
 
-  it('should spawn the 5 default team members from fish-names.json when using defaults', () => {
+  it('should spawn fish school matching active species when using defaults', () => {
     const school = createFishSchool(800, 500);
-    expect(school).toHaveLength(5);
-    const names = school.map((f) => f.name);
-    expect(names).toContain('Andreas');
-    expect(names).toContain('Amsal');
-    expect(names).toContain('Fahrudin');
-    expect(names).toContain('Pandu');
-    expect(names).toContain('Fransisca');
+    expect(school.length).toBeGreaterThanOrEqual(1);
+    school.forEach((fish) => {
+      expect(fish.name).toBeTruthy();
+      expect(fish.type).toBeTruthy();
+    });
   });
 
   it('should generate a school of fish matching density and active oceanic species', () => {

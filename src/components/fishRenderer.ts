@@ -8,28 +8,52 @@ import { getHungerStatus } from './lifeCycleHelper';
 export function createFishSchool(
   width: number,
   height: number,
-  totalCount: number = 5,
-  activeSpecies: FishSpeciesType[] = ['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy']
+  totalCount: number = 11,
+  activeSpecies: FishSpeciesType[] = [
+    'mascot',
+    'angelfish',
+    'cherryShrimp',
+    'rasbora',
+    'guppy',
+    'neonTetra',
+    'shark',
+    'whale',
+    'dolphin',
+    'mantaRay',
+    'pufferfish',
+  ]
 ): FishParticle[] {
   const fish: FishParticle[] = [];
   const usedNames = new Set<string>();
   const speciesList =
     activeSpecies.length > 0
       ? activeSpecies
-      : (['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'] as FishSpeciesType[]);
+      : ([
+          'mascot',
+          'angelfish',
+          'cherryShrimp',
+          'rasbora',
+          'guppy',
+          'neonTetra',
+          'shark',
+          'whale',
+          'dolphin',
+          'mantaRay',
+          'pufferfish',
+        ] as FishSpeciesType[]);
 
   let idCounter = 1;
 
   const spawnSingleFish = (species: FishSpeciesType) => {
     if (species === 'mascot') {
-      const size = 42;
+      const size = 48;
       fish.push({
         id: idCounter++,
         name: getFishName('mascot', usedNames),
         x: width * 0.35 + Math.random() * (width * 0.3),
         y: height * 0.35 + Math.random() * (height * 0.3),
-        vx: 1.1,
-        vy: 0.1,
+        vx: 1.05,
+        vy: 0.08,
         size,
         baseSize: size,
         type: 'mascot',
@@ -37,7 +61,7 @@ export function createFishSchool(
         secondaryColor: '#48b3bf',
         angle: 0,
         tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.18,
+        tailSpeed: 0.16,
         hunger: 20,
         eatenCount: 0,
         stage: 'adult',
@@ -46,14 +70,14 @@ export function createFishSchool(
         fadeOpacity: 1.0,
       });
     } else if (species === 'angelfish') {
-      const size = 36 + Math.random() * 4;
+      const size = 38 + Math.random() * 4;
       fish.push({
         id: idCounter++,
         name: getFishName('angelfish', usedNames),
         x: width * 0.2 + Math.random() * (width * 0.6),
         y: height * 0.2 + Math.random() * (height * 0.4),
-        vx: (Math.random() > 0.5 ? 1 : -1) * (0.45 + Math.random() * 0.2),
-        vy: (Math.random() - 0.5) * 0.2,
+        vx: (Math.random() > 0.5 ? 1 : -1) * (0.42 + Math.random() * 0.18),
+        vy: (Math.random() - 0.5) * 0.18,
         size,
         baseSize: size,
         type: 'angelfish',
@@ -62,7 +86,7 @@ export function createFishSchool(
         accentColor: '#facc15',
         angle: 0,
         tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.12,
+        tailSpeed: 0.11,
         hunger: 15 + Math.floor(Math.random() * 15),
         eatenCount: 0,
         stage: 'adult',
@@ -95,7 +119,7 @@ export function createFishSchool(
         fadeOpacity: 1.0,
       });
     } else if (species === 'rasbora') {
-      const size = 18 + Math.random() * 3;
+      const size = 21 + Math.random() * 3;
       fish.push({
         id: idCounter++,
         name: getFishName('rasbora', usedNames),
@@ -122,14 +146,14 @@ export function createFishSchool(
     } else if (species === 'guppy') {
       const guppyTails = ['#06b6d4', '#ec4899', '#8b5cf6', '#f59e0b'];
       const pickedTail = guppyTails[Math.floor(Math.random() * guppyTails.length)];
-      const size = 19 + Math.random() * 3;
+      const size = 25 + Math.random() * 3;
       fish.push({
         id: idCounter++,
         name: getFishName('guppy', usedNames),
         x: width * 0.15 + Math.random() * (width * 0.7),
         y: height * 0.15 + Math.random() * (height * 0.45),
         vx: (Math.random() > 0.5 ? 1 : -1) * (0.65 + Math.random() * 0.3),
-        vy: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.25,
         size,
         baseSize: size,
         type: 'guppy',
@@ -137,7 +161,7 @@ export function createFishSchool(
         secondaryColor: pickedTail,
         angle: 0,
         tailPhase: Math.random() * Math.PI * 2,
-        tailSpeed: 0.24 + Math.random() * 0.1,
+        tailSpeed: 0.24,
         hunger: 15 + Math.floor(Math.random() * 15),
         eatenCount: 0,
         stage: 'adult',
@@ -146,7 +170,7 @@ export function createFishSchool(
         fadeOpacity: 1.0,
       });
     } else if (species === 'neonTetra') {
-      const size = 17 + Math.random() * 3;
+      const size = 18 + Math.random() * 2;
       fish.push({
         id: idCounter++,
         name: getFishName('neonTetra', usedNames),
@@ -169,14 +193,134 @@ export function createFishSchool(
         ageSec: 25,
         fadeOpacity: 1.0,
       });
+    } else if (species === 'shark') {
+      const size = 56 + Math.random() * 5;
+      fish.push({
+        id: idCounter++,
+        name: getFishName('shark', usedNames),
+        x: width * 0.2 + Math.random() * (width * 0.6),
+        y: height * 0.25 + Math.random() * (height * 0.35),
+        vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.25),
+        vy: (Math.random() - 0.5) * 0.18,
+        size,
+        baseSize: size,
+        type: 'shark',
+        color: '#475569',
+        secondaryColor: '#94a3b8',
+        angle: 0,
+        tailPhase: Math.random() * Math.PI * 2,
+        tailSpeed: 0.14,
+        hunger: 15 + Math.floor(Math.random() * 15),
+        eatenCount: 0,
+        stage: 'adult',
+        growthPoints: 5,
+        ageSec: 30,
+        fadeOpacity: 1.0,
+      });
+    } else if (species === 'whale') {
+      const size = 88 + Math.random() * 8;
+      fish.push({
+        id: idCounter++,
+        name: getFishName('whale', usedNames),
+        x: width * 0.15 + Math.random() * (width * 0.7),
+        y: height * 0.4 + Math.random() * (height * 0.3),
+        vx: (Math.random() > 0.5 ? 1 : -1) * (0.35 + Math.random() * 0.15),
+        vy: (Math.random() - 0.5) * 0.1,
+        size,
+        baseSize: size,
+        type: 'whale',
+        color: '#1e293b',
+        secondaryColor: '#38bdf8',
+        angle: 0,
+        tailPhase: Math.random() * Math.PI * 2,
+        tailSpeed: 0.06,
+        hunger: 15 + Math.floor(Math.random() * 15),
+        eatenCount: 0,
+        stage: 'adult',
+        growthPoints: 5,
+        ageSec: 35,
+        fadeOpacity: 1.0,
+      });
+    } else if (species === 'dolphin') {
+      const size = 46 + Math.random() * 4;
+      fish.push({
+        id: idCounter++,
+        name: getFishName('dolphin', usedNames),
+        x: width * 0.2 + Math.random() * (width * 0.6),
+        y: height * 0.2 + Math.random() * (height * 0.35),
+        vx: (Math.random() > 0.5 ? 1 : -1) * (1.0 + Math.random() * 0.3),
+        vy: (Math.random() - 0.5) * 0.25,
+        size,
+        baseSize: size,
+        type: 'dolphin',
+        color: '#0284c7',
+        secondaryColor: '#e0f2fe',
+        angle: 0,
+        tailPhase: Math.random() * Math.PI * 2,
+        tailSpeed: 0.2,
+        hunger: 15 + Math.floor(Math.random() * 15),
+        eatenCount: 0,
+        stage: 'adult',
+        growthPoints: 5,
+        ageSec: 28,
+        fadeOpacity: 1.0,
+      });
+    } else if (species === 'mantaRay') {
+      const size = 50 + Math.random() * 4;
+      fish.push({
+        id: idCounter++,
+        name: getFishName('mantaRay', usedNames),
+        x: width * 0.2 + Math.random() * (width * 0.6),
+        y: height * 0.35 + Math.random() * (height * 0.3),
+        vx: (Math.random() > 0.5 ? 1 : -1) * (0.55 + Math.random() * 0.2),
+        vy: (Math.random() - 0.5) * 0.15,
+        size,
+        baseSize: size,
+        type: 'mantaRay',
+        color: '#0f172a',
+        secondaryColor: '#38bdf8',
+        angle: 0,
+        tailPhase: Math.random() * Math.PI * 2,
+        tailSpeed: 0.10,
+        hunger: 15 + Math.floor(Math.random() * 15),
+        eatenCount: 0,
+        stage: 'adult',
+        growthPoints: 5,
+        ageSec: 30,
+        fadeOpacity: 1.0,
+      });
+    } else if (species === 'pufferfish') {
+      const size = 27 + Math.random() * 3;
+      fish.push({
+        id: idCounter++,
+        name: getFishName('pufferfish', usedNames),
+        x: width * 0.2 + Math.random() * (width * 0.6),
+        y: height * 0.3 + Math.random() * (height * 0.35),
+        vx: (Math.random() > 0.5 ? 1 : -1) * (0.48 + Math.random() * 0.18),
+        vy: (Math.random() - 0.5) * 0.18,
+        size,
+        baseSize: size,
+        type: 'pufferfish',
+        color: '#eab308',
+        secondaryColor: '#fef08a',
+        angle: 0,
+        tailPhase: Math.random() * Math.PI * 2,
+        tailSpeed: 0.28,
+        hunger: 15 + Math.floor(Math.random() * 15),
+        eatenCount: 0,
+        stage: 'adult',
+        growthPoints: 5,
+        ageSec: 25,
+        fadeOpacity: 1.0,
+      });
     } else {
-      const size = 20;
+      const size = 22;
       fish.push({
         id: idCounter++,
         name: getFishName(species, usedNames),
         x: width * 0.3 + Math.random() * (width * 0.4),
         y: height * 0.3 + Math.random() * (height * 0.4),
-        vx: (Math.random() > 0.5 ? 1 : -1) * 0.8,
+        vx: (Math.random() > 0.5 ? 1 : -1) * 0.7,
         vy: 0,
         size,
         baseSize: size,
@@ -220,7 +364,7 @@ export function createFishSchool(
  */
 export function drawAngelfish(ctx: CanvasRenderingContext2D, fish: FishParticle, tailWag: number): void {
   ctx.save();
-  const scale = fish.size / 40;
+  const scale = fish.size / 68;
   ctx.scale(scale, scale);
 
   // 1. Long Ventral thread fins
@@ -489,7 +633,7 @@ export function drawGuppy(
  */
 export function drawShark(ctx: CanvasRenderingContext2D, fish: FishParticle, tailWag: number): void {
   ctx.save();
-  const scale = fish.size / 44;
+  const scale = fish.size / 40;
   ctx.scale(scale, scale);
 
   // 1. Sharp dorsal fin
@@ -576,7 +720,7 @@ export function drawWhale(
   _timeSec: number = 0
 ): void {
   ctx.save();
-  const scale = fish.size / 62;
+  const scale = fish.size / 54;
   ctx.scale(scale, scale);
 
   // 1. Massive Oceanic Blue Body
@@ -666,7 +810,7 @@ export function drawDolphin(
   _timeSec: number = 0
 ): void {
   ctx.save();
-  const scale = fish.size / 40;
+  const scale = fish.size / 38;
   ctx.scale(scale, scale);
 
   // 1. Sleek falcate dorsal fin
@@ -746,7 +890,7 @@ export function drawMantaRay(
   timeSec: number = 0
 ): void {
   ctx.save();
-  const scale = fish.size / 38;
+  const scale = fish.size / 34;
   ctx.scale(scale, scale);
 
   // Pectoral wing flap wave calculation

@@ -9,13 +9,15 @@
     "showFlora": true,
     "showNametags": true,
     "enableLifeCycle": true,
-    "fishDensity": 5,
+    "fishDensity": 7,
     "activeSpecies": [
       "mascot",
+      "mantaRay",
+      "dolphin",
       "angelfish",
-      "cherryShrimp",
-      "rasbora",
-      "guppy"
+      "whale",
+      "shark",
+      "pufferfish"
     ]
   },
   "telemetry": {
@@ -34,7 +36,8 @@
         "angelfish",
         "whale",
         "shark",
-        "guppy"
+        "pufferfish",
+        "dolphin"
       ]
     },
     {

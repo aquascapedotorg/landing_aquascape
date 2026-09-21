@@ -27,9 +27,15 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
     'cherryShrimp',
     'rasbora',
     'guppy',
+    'neonTetra',
+    'shark',
+    'whale',
+    'dolphin',
+    'mantaRay',
+    'pufferfish',
   ];
 
-  const currentDensity = settings.fishDensity || 5;
+  const currentDensity = settings.fishDensity || 11;
   const showNametags = settings.showNametags ?? true;
   const enableLifeCycle = settings.enableLifeCycle ?? true;
 
@@ -89,8 +95,15 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
   const handleApplyPreset = (preset: 'all' | 'oceanic' | 'schooling' | 'minimalist') => {
     if (preset === 'all') {
       onUpdateSettings({
-        fishDensity: 5,
-        activeSpecies: ['mascot', 'angelfish', 'cherryShrimp', 'rasbora', 'guppy'],
+        fishDensity: 6,
+        activeSpecies: [
+          'mascot',
+          'mantaRay',
+          'angelfish',
+          'whale',
+          'shark',
+          'guppy',
+        ],
       });
     } else if (preset === 'oceanic') {
       onUpdateSettings({

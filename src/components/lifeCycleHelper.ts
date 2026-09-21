@@ -54,17 +54,17 @@ export function spawnBabyFish(
   usedNames: Set<string> = new Set()
 ): FishParticle {
   const baseSizes: Record<FishSpeciesType, number> = {
-    mascot: 42,
-    angelfish: 36,
+    whale: 88,
+    shark: 56,
+    mantaRay: 50,
+    dolphin: 46,
+    mascot: 48,
+    angelfish: 38,
+    pufferfish: 27,
+    guppy: 25,
+    rasbora: 21,
     neonTetra: 18,
-    rasbora: 20,
-    guppy: 20,
-    cherryShrimp: 14,
-    shark: 44,
-    whale: 62,
-    dolphin: 40,
-    mantaRay: 38,
-    pufferfish: 24,
+    cherryShrimp: 13,
   };
 
   const baseSize = baseSizes[species] || 20;
