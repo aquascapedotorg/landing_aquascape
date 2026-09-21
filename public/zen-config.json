@@ -17,6 +17,8 @@
       "angelfish",
       "whale",
       "shark",
+      "orca",
+      "turtle",
       "pufferfish"
     ]
   },
@@ -42,11 +44,13 @@
     },
     {
       "id": "oceanic",
-      "label": "Samudra Tropis (Hiu, Paus & Pari)",
-      "density": 5,
+      "label": "Samudra Megah (Hiu, Paus, Orca & Penyu)",
+      "density": 7,
       "activeSpecies": [
         "shark",
         "whale",
+        "orca",
+        "turtle",
         "dolphin",
         "mantaRay",
         "pufferfish"

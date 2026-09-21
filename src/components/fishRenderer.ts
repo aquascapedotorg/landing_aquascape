@@ -283,6 +283,56 @@ export function createSingleFish(
       ageSec: 25,
       fadeOpacity: 1.0,
     };
+  } else if (species === 'orca') {
+    const size = 78 + Math.random() * 6;
+    return {
+      id,
+      name: getFishName('orca', usedNames),
+      x: width * 0.15 + Math.random() * (width * 0.7),
+      y: height * 0.35 + Math.random() * (height * 0.35),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.25),
+      vy: (Math.random() - 0.5) * 0.18,
+      size,
+      baseSize: size,
+      type: 'orca',
+      color: '#0f172a',
+      secondaryColor: '#ffffff',
+      accentColor: '#94a3b8',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.12,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 32,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'turtle') {
+    const size = 44 + Math.random() * 4;
+    return {
+      id,
+      name: getFishName('turtle', usedNames),
+      x: width * 0.15 + Math.random() * (width * 0.7),
+      y: height * 0.4 + Math.random() * (height * 0.35),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.42 + Math.random() * 0.16),
+      vy: (Math.random() - 0.5) * 0.12,
+      size,
+      baseSize: size,
+      type: 'turtle',
+      color: '#15803d',
+      secondaryColor: '#ca8a04',
+      accentColor: '#fef08a',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.08,
+      hunger: 15 + Math.floor(Math.random() * 15),
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
   } else {
     const size = 22;
     return {
@@ -315,7 +365,7 @@ export function createSingleFish(
 export function createFishSchool(
   width: number,
   height: number,
-  totalCount: number = 11,
+  totalCount: number = 13,
   activeSpecies: FishSpeciesType[] = [
     'mascot',
     'angelfish',
@@ -328,6 +378,8 @@ export function createFishSchool(
     'dolphin',
     'mantaRay',
     'pufferfish',
+    'orca',
+    'turtle',
   ]
 ): FishParticle[] {
   const fish: FishParticle[] = [];
@@ -347,6 +399,8 @@ export function createFishSchool(
           'dolphin',
           'mantaRay',
           'pufferfish',
+          'orca',
+          'turtle',
         ] as FishSpeciesType[]);
 
   let idCounter = 1;
@@ -381,7 +435,7 @@ export function createFishSchool(
  */
 export function syncFishSchool(
   existingFish: FishParticle[],
-  totalCount: number = 11,
+  totalCount: number = 13,
   activeSpecies: FishSpeciesType[] = [
     'mascot',
     'angelfish',
@@ -394,6 +448,8 @@ export function syncFishSchool(
     'dolphin',
     'mantaRay',
     'pufferfish',
+    'orca',
+    'turtle',
   ],
   width: number = 800,
   height: number = 500
@@ -417,6 +473,8 @@ export function syncFishSchool(
           'dolphin',
           'mantaRay',
           'pufferfish',
+          'orca',
+          'turtle',
         ] as FishSpeciesType[]);
 
   const targetCount = Math.max(1, totalCount);
@@ -1168,6 +1226,276 @@ export function drawPufferfish(
 }
 
 /**
+ * Renders Orca (Paus Pembunuh / Paus Orca) - majestic apex predator with striking monochrome contrast,
+ * towering erect dorsal fin, distinctive white oval eye patch, and white ventral markings.
+ */
+export function drawOrca(
+  ctx: CanvasRenderingContext2D,
+  fish: FishParticle,
+  tailWag: number,
+  _timeSec: number = 0
+): void {
+  ctx.save();
+  const scale = Math.max(0.1, fish.size) / 52;
+  ctx.scale(scale, scale);
+
+  // 1. Towering Dorsal Fin (Iconic erect triangular dorsal fin pointing up along -Y)
+  ctx.fillStyle = '#090d16';
+  ctx.beginPath();
+  ctx.moveTo(-2, -10);
+  ctx.lineTo(-8, -32); // High towering apex
+  ctx.quadraticCurveTo(-11, -33, -13, -28);
+  ctx.quadraticCurveTo(-14, -18, -18, -9);
+  ctx.closePath();
+  ctx.fill();
+
+  // 2. Main Sleek Jet-Black Hydrodynamic Body
+  ctx.fillStyle = '#090d16';
+  ctx.beginPath();
+  ctx.moveTo(34, 1); // Snout tip
+  ctx.quadraticCurveTo(24, -12, 6, -13); // Forehead / blowhole arch
+  ctx.quadraticCurveTo(-14, -13, -34, -3); // Back arch down to tail stock
+  ctx.quadraticCurveTo(-22, 13, 4, 12); // Belly arch
+  ctx.quadraticCurveTo(22, 9, 34, 1); // Chin to snout
+  ctx.closePath();
+  ctx.fill();
+
+  // 3. Iconic Oval White Eye Patch (Just above & behind eye)
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.ellipse(18, -6, 5.5, 2.6, -Math.PI / 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 4. White Saddle Patch (Behind dorsal fin)
+  ctx.fillStyle = 'rgba(226, 232, 240, 0.65)';
+  ctx.beginPath();
+  ctx.moveTo(-13, -9);
+  ctx.quadraticCurveTo(-19, -12, -25, -7);
+  ctx.quadraticCurveTo(-20, -5, -15, -7);
+  ctx.closePath();
+  ctx.fill();
+
+  // 5. White Underbelly & Throat Field
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(30, 2); // Lower jaw
+  ctx.quadraticCurveTo(18, 9, 6, 9); // Throat & chest
+  ctx.quadraticCurveTo(-12, 11, -26, 4); // Ventral flank patch
+  ctx.quadraticCurveTo(-18, 12, 2, 11);
+  ctx.quadraticCurveTo(18, 8, 30, 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 6. Large Rounded Pectoral Paddle Flipper
+  ctx.fillStyle = '#090d16';
+  ctx.beginPath();
+  ctx.moveTo(10, 6);
+  ctx.quadraticCurveTo(4, 20, -4, 19);
+  ctx.quadraticCurveTo(-10, 16, -2, 6);
+  ctx.closePath();
+  ctx.fill();
+
+  // 7. Orca Eye
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(22, -1.5, 1.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#94a3b8';
+  ctx.beginPath();
+  ctx.arc(22.5, -2, 0.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 8. Caudal Fluke (Horizontal whale tail with wag)
+  ctx.save();
+  ctx.translate(-34, -2);
+  ctx.rotate(tailWag * 1.25);
+  ctx.fillStyle = '#090d16';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-10, -18, -18, -15);
+  ctx.lineTo(-12, 0); // Center notch
+  ctx.lineTo(-18, 15);
+  ctx.quadraticCurveTo(-10, 18, 0, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/**
+ * Renders Sea Turtle (Penyu Laut) - ancient marine reptile with ornate geometric scutes on shell,
+ * rowing front flippers, textured reptilian head, and calm swimming grace.
+ */
+export function drawTurtle(
+  ctx: CanvasRenderingContext2D,
+  fish: FishParticle,
+  _tailWag: number = 0,
+  _timeSec: number = 0
+): void {
+  ctx.save();
+  const scale = Math.max(0.1, fish.size) / 36;
+  ctx.scale(scale, scale);
+
+  // Rowing flipper rhythm (synchronous graceful sweep)
+  const flipperAngle = Math.sin(fish.tailPhase * 1.4) * 0.45;
+
+  // 1. Far Rear Flipper (Behind body)
+  ctx.fillStyle = '#166534';
+  ctx.beginPath();
+  ctx.moveTo(-16, 5);
+  ctx.quadraticCurveTo(-24, 12, -28, 9);
+  ctx.quadraticCurveTo(-22, 4, -14, 3);
+  ctx.closePath();
+  ctx.fill();
+
+  // 2. Far Front Flipper (Top stroke behind shell)
+  ctx.save();
+  ctx.translate(12, -2);
+  ctx.rotate(-flipperAngle * 0.7 - 0.2);
+  ctx.fillStyle = '#14532d';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(8, -16, -2, -24);
+  ctx.quadraticCurveTo(-12, -18, -4, -4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // 3. Plastron (Warm Ivory Underbelly Shell)
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.moveTo(14, 3);
+  ctx.quadraticCurveTo(0, 7, -18, 3);
+  ctx.quadraticCurveTo(0, 4, 14, 3);
+  ctx.closePath();
+  ctx.fill();
+
+  // 4. Carapace (Arched Emerald Geometric Shell)
+  ctx.fillStyle = '#15803d';
+  ctx.beginPath();
+  ctx.moveTo(15, 2);
+  ctx.quadraticCurveTo(6, -18, -6, -18);
+  ctx.quadraticCurveTo(-18, -14, -20, 2);
+  ctx.quadraticCurveTo(0, 5, 15, 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Carapace Scutes (Beautiful Geometrical Plates with Gold Outlines)
+  ctx.strokeStyle = '#ca8a04';
+  ctx.lineWidth = 1.2;
+
+  // Central Scute 1
+  ctx.fillStyle = '#166534';
+  ctx.beginPath();
+  ctx.moveTo(9, -2);
+  ctx.lineTo(3, -12);
+  ctx.lineTo(-4, -12);
+  ctx.lineTo(-2, -2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Central Scute 2
+  ctx.fillStyle = '#14532d';
+  ctx.beginPath();
+  ctx.moveTo(-2, -2);
+  ctx.lineTo(-4, -12);
+  ctx.lineTo(-12, -10);
+  ctx.lineTo(-10, -2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Front Marginal Scute
+  ctx.fillStyle = '#15803d';
+  ctx.beginPath();
+  ctx.moveTo(14, 1);
+  ctx.lineTo(9, -2);
+  ctx.lineTo(3, -12);
+  ctx.quadraticCurveTo(8, -14, 14, 1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Rear Marginal Scute
+  ctx.fillStyle = '#15803d';
+  ctx.beginPath();
+  ctx.moveTo(-10, -2);
+  ctx.lineTo(-12, -10);
+  ctx.quadraticCurveTo(-18, -8, -19, 1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // 5. Short Pointed Tail
+  ctx.fillStyle = '#166534';
+  ctx.beginPath();
+  ctx.moveTo(-19, 1);
+  ctx.lineTo(-25, 3);
+  ctx.lineTo(-18, 4);
+  ctx.closePath();
+  ctx.fill();
+
+  // 6. Near Rear Flipper
+  ctx.fillStyle = '#15803d';
+  ctx.beginPath();
+  ctx.moveTo(-14, 4);
+  ctx.quadraticCurveTo(-22, 14, -26, 12);
+  ctx.quadraticCurveTo(-20, 6, -11, 4);
+  ctx.closePath();
+  ctx.fill();
+
+  // 7. Reptilian Head & Neck (Emerging forward at +X)
+  ctx.fillStyle = '#166534';
+  ctx.beginPath();
+  ctx.moveTo(13, -1);
+  ctx.quadraticCurveTo(18, -4, 25, -4);
+  ctx.quadraticCurveTo(31, -3, 31, 0); // Beak tip
+  ctx.quadraticCurveTo(28, 3, 20, 2);
+  ctx.lineTo(13, 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Sea Turtle Eye (Golden amber ring with gleaming pupil)
+  ctx.fillStyle = '#ca8a04';
+  ctx.beginPath();
+  ctx.arc(24, -2, 2.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.arc(24.2, -2, 1.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(24.7, -2.4, 0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 8. Main Front Wing-Flipper (Near side, energetic rowing stroke!)
+  ctx.save();
+  ctx.translate(11, 3);
+  ctx.rotate(flipperAngle);
+  ctx.fillStyle = '#15803d';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(10, 14, 8, 24);
+  ctx.quadraticCurveTo(2, 26, -4, 18);
+  ctx.quadraticCurveTo(-4, 8, -2, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Flipper scale highlights
+  ctx.fillStyle = '#ca8a04';
+  ctx.beginPath();
+  ctx.arc(3, 10, 1.2, 0, Math.PI * 2);
+  ctx.arc(4, 17, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/**
  * Draws an interactive nametag badge above a fish.
  */
 export function drawFishNametag(
@@ -1225,6 +1553,10 @@ export function drawFishNametag(
         ? 'Hiu'
         : fish.type === 'whale'
         ? 'Paus'
+        : fish.type === 'orca'
+        ? 'Paus Orca'
+        : fish.type === 'turtle'
+        ? 'Penyu'
         : fish.type === 'dolphin'
         ? 'Lumba-lumba'
         : fish.type === 'mantaRay'

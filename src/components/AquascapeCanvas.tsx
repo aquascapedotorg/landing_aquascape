@@ -15,6 +15,8 @@ import {
   drawDolphin,
   drawMantaRay,
   drawPufferfish,
+  drawOrca,
+  drawTurtle,
   getFishOrientation,
 } from './fishRenderer';
 import {
@@ -154,6 +156,8 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           'dolphin',
           'mantaRay',
           'pufferfish',
+          'orca',
+          'turtle',
         ] as FishSpeciesType[]);
 
     if (fishRef.current.length === 0) {
@@ -312,6 +316,8 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
             'dolphin',
             'mantaRay',
             'pufferfish',
+            'orca',
+            'turtle',
           ] as FishSpeciesType[]);
 
     fishRef.current = syncFishSchool(fishRef.current, targetDensity, activeSpecies, w, h);
@@ -1060,6 +1066,12 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         } else if (fish.type === 'pufferfish') {
           // --- BUNTAL (PUFFERFISH) ---
           drawPufferfish(ctx, fish, tailWag, timeSec);
+        } else if (fish.type === 'orca') {
+          // --- PAUS ORCA ---
+          drawOrca(ctx, fish, tailWag, timeSec);
+        } else if (fish.type === 'turtle') {
+          // --- PENYU LAUT ---
+          drawTurtle(ctx, fish, tailWag, timeSec);
         } else {
           // --- NEON / CARDINAL TETRA ---
           const len = Math.max(1, Math.abs(fish.size));

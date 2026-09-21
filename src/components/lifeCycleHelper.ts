@@ -55,10 +55,12 @@ export function spawnBabyFish(
 ): FishParticle {
   const baseSizes: Record<FishSpeciesType, number> = {
     whale: 88,
+    orca: 78,
     shark: 56,
     mantaRay: 50,
     dolphin: 46,
     mascot: 48,
+    turtle: 44,
     angelfish: 38,
     pufferfish: 27,
     guppy: 25,
@@ -93,6 +95,10 @@ export function spawnBabyFish(
         return { color: '#475569', secondaryColor: '#94a3b8' };
       case 'whale':
         return { color: '#1e3a5f', secondaryColor: '#60a5fa' };
+      case 'orca':
+        return { color: '#0f172a', secondaryColor: '#ffffff' };
+      case 'turtle':
+        return { color: '#15803d', secondaryColor: '#ca8a04' };
       case 'dolphin':
         return { color: '#38bdf8', secondaryColor: '#e0f2fe' };
       case 'mantaRay':

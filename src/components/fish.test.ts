@@ -11,14 +11,17 @@ import {
   drawDolphin,
   drawMantaRay,
   drawPufferfish,
+  drawOrca,
+  drawTurtle,
+  createSingleFish,
   syncFishSchool,
   adjustFishPositionsForResize,
   getFishOrientation,
 } from './fishRenderer';
 
 describe('Fish Fauna & Naming System (TDD)', () => {
-  it('should have all 11 species registered in the catalog', () => {
-    expect(FISH_CATALOG.species).toHaveLength(11);
+  it('should have all 13 species registered in the catalog', () => {
+    expect(FISH_CATALOG.species).toHaveLength(13);
     const speciesIds = FISH_CATALOG.species.map((s) => s.id);
     expect(speciesIds).toContain('mascot');
     expect(speciesIds).toContain('neonTetra');
@@ -31,6 +34,8 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     expect(speciesIds).toContain('dolphin');
     expect(speciesIds).toContain('mantaRay');
     expect(speciesIds).toContain('pufferfish');
+    expect(speciesIds).toContain('orca');
+    expect(speciesIds).toContain('turtle');
   });
 
   it('should prioritize the custom primary names defined by the user in fish-names.json', () => {
@@ -499,6 +504,36 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     const steepUp = getFishOrientation(-0.01, -5.0);
     expect(steepUp.isFacingLeft).toBe(true);
     expect(steepUp.pitch).toBeGreaterThanOrEqual(-Math.PI / 5);
+  });
+
+  it('should successfully create and render Orca (Paus Orca) with authentic characteristics', () => {
+    const mockCtx = createMockCtx();
+    const usedNames = new Set<string>();
+    const orca = createSingleFish('orca', 99, 1000, 600, usedNames);
+
+    expect(orca.type).toBe('orca');
+    expect(orca.name).toBe('Keiko'); // primary default name
+    expect(orca.size).toBeGreaterThanOrEqual(75);
+    expect(orca.color).toBe('#0f172a');
+    expect(orca.secondaryColor).toBe('#ffffff');
+
+    // Rendering drawOrca should execute cleanly without error
+    expect(() => drawOrca(mockCtx, orca, 0.15, 1.0)).not.toThrow();
+  });
+
+  it('should successfully create and render Sea Turtle (Penyu Laut) with ornate scute shell and rowing flippers', () => {
+    const mockCtx = createMockCtx();
+    const usedNames = new Set<string>();
+    const turtle = createSingleFish('turtle', 100, 1000, 600, usedNames);
+
+    expect(turtle.type).toBe('turtle');
+    expect(turtle.name).toBe('Crush'); // primary default name
+    expect(turtle.size).toBeGreaterThanOrEqual(40);
+    expect(turtle.color).toBe('#15803d');
+    expect(turtle.secondaryColor).toBe('#ca8a04');
+
+    // Rendering drawTurtle should execute cleanly without error
+    expect(() => drawTurtle(mockCtx, turtle, 0.1, 1.0)).not.toThrow();
   });
 });
 

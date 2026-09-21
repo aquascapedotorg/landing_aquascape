@@ -156,6 +156,36 @@
         "Boba",
         "Gembul"
       ]
+    },
+    {
+      "id": "orca",
+      "name": "Paus Orca",
+      "scientificName": "Orcinus orca",
+      "category": "Oceanic Apex",
+      "description": "Paus pembunuh legendaris dengan corak monokrom hitam-putih kontras, sirip punggung tegak menjulang, dan gaya renang bertenaga.",
+      "defaultNames": [
+        "Keiko",
+        "Free Willy",
+        "Onyx",
+        "Shamu",
+        "Luna",
+        "Eclipse"
+      ]
+    },
+    {
+      "id": "turtle",
+      "name": "Penyu Laut",
+      "scientificName": "Chelonia mydas",
+      "category": "Ancient Marine Reptile",
+      "description": "Penyu samudra purba dengan karapas berpola geometris indah dan sirip kayuh gemulai yang berenang santai di antara vegetasi.",
+      "defaultNames": [
+        "Crush",
+        "Shelly",
+        "Sammy",
+        "Tortoise",
+        "Coral",
+        "Penyu"
+      ]
     }
   ],
   "namePool": [

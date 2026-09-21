@@ -35,6 +35,8 @@ export const FishCustomizerModal: React.FC<FishCustomizerProps> = ({
     'dolphin',
     'mantaRay',
     'pufferfish',
+    'orca',
+    'turtle',
   ];
 
   const currentDensity = settings.fishDensity || 11;

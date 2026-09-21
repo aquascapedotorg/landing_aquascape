@@ -69,6 +69,16 @@ describe('Fish Life Cycle & Regeneration System (TDD)', () => {
     expect(baby.eatenCount).toBe(0);
     expect(baby.name).toBeTruthy();
     expect(baby.size).toBeLessThanOrEqual(baby.baseSize * 0.6);
+
+    const babyOrca = spawnBabyFish(800, 500, 'orca', usedNames);
+    expect(babyOrca.type).toBe('orca');
+    expect(babyOrca.stage).toBe('baby');
+    expect(babyOrca.baseSize).toBe(78);
+
+    const babyTurtle = spawnBabyFish(800, 500, 'turtle', usedNames);
+    expect(babyTurtle.type).toBe('turtle');
+    expect(babyTurtle.stage).toBe('baby');
+    expect(babyTurtle.baseSize).toBe(44);
   });
 
   it('should return clean hunger status text without any emojis', () => {
