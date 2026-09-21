@@ -511,8 +511,9 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     const usedNames = new Set<string>();
     const orca = createSingleFish('orca', 99, 1000, 600, usedNames);
 
+    const expectedOrcaName = FISH_CATALOG.species.find((s) => s.id === 'orca')!.defaultNames[0];
     expect(orca.type).toBe('orca');
-    expect(orca.name).toBe('Keiko'); // primary default name
+    expect(orca.name).toBe(expectedOrcaName); // primary default name from catalog
     expect(orca.size).toBeGreaterThanOrEqual(75);
     expect(orca.color).toBe('#0f172a');
     expect(orca.secondaryColor).toBe('#ffffff');
@@ -526,8 +527,9 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     const usedNames = new Set<string>();
     const turtle = createSingleFish('turtle', 100, 1000, 600, usedNames);
 
+    const expectedTurtleName = FISH_CATALOG.species.find((s) => s.id === 'turtle')!.defaultNames[0];
     expect(turtle.type).toBe('turtle');
-    expect(turtle.name).toBe('Crush'); // primary default name
+    expect(turtle.name).toBe(expectedTurtleName); // primary default name from catalog
     expect(turtle.size).toBeGreaterThanOrEqual(40);
     expect(turtle.color).toBe('#15803d');
     expect(turtle.secondaryColor).toBe('#ca8a04');

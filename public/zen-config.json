@@ -30,15 +30,15 @@
   "presets": [
     {
       "id": "team",
-      "label": "Tim Inti AQUASCAPE",
+      "label": "AQUASCAPE Team",
       "density": 6,
       "activeSpecies": [
         "mascot",
         "mantaRay",
-        "angelfish",
+        "orca",
         "whale",
         "shark",
-        "pufferfish",
+        "turtle",
         "dolphin"
       ]
     },
