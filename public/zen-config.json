@@ -14,12 +14,10 @@
       "mascot",
       "mantaRay",
       "dolphin",
-      "angelfish",
       "whale",
       "shark",
       "orca",
-      "turtle",
-      "pufferfish"
+      "turtle"
     ]
   },
   "telemetry": {
