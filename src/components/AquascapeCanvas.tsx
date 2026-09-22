@@ -22,7 +22,7 @@ import {
 } from './fishRenderer';
 import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
-import { recordKuaciEaten } from '../services/streakService';
+import { recordKuaciEaten, getStreakFor } from '../services/streakService';
 import { CommunalFishInput } from './aquascapeEvents';
 import {
   updateFishLifeCycle,
@@ -1316,7 +1316,8 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         const distToMouse = Math.hypot(fish.x - mouseRef.current.x, fish.y - mouseRef.current.y);
         const isHovered = mouseRef.current.active && distToMouse < Math.max(38, fish.size * 1.5);
         if (currentSettings.showNametags || isHovered) {
-          drawFishNametag(ctx, fish, isHovered);
+          const streakInfo = fish.isCommunal ? getStreakFor(fish.name) : undefined;
+          drawFishNametag(ctx, fish, isHovered, streakInfo);
         }
       }
 

@@ -1550,13 +1550,16 @@ export function drawTurtle(
 export function drawFishNametag(
   ctx: CanvasRenderingContext2D,
   fish: FishParticle,
-  isHovered: boolean = false
+  isHovered: boolean = false,
+  streakInfo?: { streak: number; rank: number }
 ): void {
   ctx.save();
   ctx.translate(fish.x, fish.y - fish.size * 0.8 - (isHovered ? 20 : 12));
 
   const stagePrefix = fish.stage === 'baby' ? '[Bayi] ' : fish.stage === 'juvenile' ? '[Remaja] ' : '';
-  const displayName = `${stagePrefix}${fish.name || 'Ikan'}`;
+  const streakSuffix =
+    streakInfo && streakInfo.streak > 0 ? ` · ${streakInfo.streak}` : '';
+  const displayName = `${stagePrefix}${fish.name || 'Ikan'}${streakSuffix}`;
 
   ctx.font = isHovered ? 'bold 11px monospace' : '10px monospace';
   const textWidth = ctx.measureText(displayName).width;
@@ -1626,6 +1629,31 @@ export function drawFishNametag(
     ctx.fill();
     ctx.fillStyle = '#cbd5e1';
     ctx.fillText(subText, 0, -badgeHeight / 2 - 9);
+  }
+
+  // Crown for top-3 ranked communal fish (canvas path, no emoji).
+  if (streakInfo && streakInfo.rank >= 1 && streakInfo.rank <= 3 && streakInfo.streak > 0) {
+    const crownColor =
+      streakInfo.rank === 1 ? '#facc15' : streakInfo.rank === 2 ? '#cbd5e1' : '#f59e0b';
+    ctx.save();
+    // Position crown just above the pill.
+    ctx.translate(0, -badgeHeight / 2 - 7);
+    ctx.fillStyle = crownColor;
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    // Simple 3-peak crown, ~14px wide, ~7px tall.
+    ctx.moveTo(-7, 3);
+    ctx.lineTo(-7, -2);
+    ctx.lineTo(-3.5, 1);
+    ctx.lineTo(0, -4);
+    ctx.lineTo(3.5, 1);
+    ctx.lineTo(7, -2);
+    ctx.lineTo(7, 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   ctx.restore();
