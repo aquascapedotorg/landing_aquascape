@@ -16,12 +16,16 @@ create index if not exists idx_fish_daily_kuaci_entry_date
 
 alter table public.fish_daily_kuaci enable row level security;
 
+-- Drop-then-create so this script is safe to re-run (create policy has no IF NOT EXISTS).
+drop policy if exists "Allow public read access" on public.fish_daily_kuaci;
 create policy "Allow public read access"
   on public.fish_daily_kuaci for select using (true);
 
+drop policy if exists "Allow public insert access" on public.fish_daily_kuaci;
 create policy "Allow public insert access"
   on public.fish_daily_kuaci for insert with check (true);
 
+drop policy if exists "Allow public update access" on public.fish_daily_kuaci;
 create policy "Allow public update access"
   on public.fish_daily_kuaci for update using (true) with check (true);
 
@@ -43,8 +47,18 @@ $$;
 
 grant execute on function public.increment_kuaci(text, int) to anon;
 
--- Live leaderboard updates
-alter publication supabase_realtime add table public.fish_daily_kuaci;
+-- Live leaderboard updates (guarded so re-running does not error if already added).
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'fish_daily_kuaci'
+  ) then
+    alter publication supabase_realtime add table public.fish_daily_kuaci;
+  end if;
+end $$;
 
 -- ==============================================================================
 -- STREAK SNAPSHOT (persist computed streaks for fast query & history)
@@ -59,10 +73,13 @@ create table if not exists public.fish_streaks (
 
 alter table public.fish_streaks enable row level security;
 
+drop policy if exists "Allow public read access" on public.fish_streaks;
 create policy "Allow public read access"
   on public.fish_streaks for select using (true);
+drop policy if exists "Allow public insert access" on public.fish_streaks;
 create policy "Allow public insert access"
   on public.fish_streaks for insert with check (true);
+drop policy if exists "Allow public update access" on public.fish_streaks;
 create policy "Allow public update access"
   on public.fish_streaks for update using (true) with check (true);
 
@@ -91,4 +108,14 @@ $$;
 
 grant execute on function public.upsert_streaks(jsonb) to anon;
 
-alter publication supabase_realtime add table public.fish_streaks;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'fish_streaks'
+  ) then
+    alter publication supabase_realtime add table public.fish_streaks;
+  end if;
+end $$;
