@@ -169,8 +169,9 @@ export function updateFishLifeCycle(
   fish.hunger = Math.min(100, (fish.hunger || 0) + dt * 0.85);
 
   if (options?.enableLifeCycle) {
-    // Mascot is immortal emblem; other fish undergo full natural cycle
-    if (fish.type !== 'mascot') {
+    // Mascot is an immortal emblem, and communal fish (sourced from Supabase) are
+    // authoritative records that must never be reborn with a local catalog name.
+    if (fish.type !== 'mascot' && !fish.isCommunal) {
       // Natural maturation over time even without kuaci (Fix Bug 6)
       if (fish.stage === 'baby' && fish.ageSec > 90) {
         fish.stage = 'juvenile';

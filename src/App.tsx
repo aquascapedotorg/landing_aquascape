@@ -17,6 +17,23 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('all');
   const [activeReadmeRepo, setActiveReadmeRepo] = useState<RepoItem | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Subscribe to real-time new fish toast events (NO EMOJIS per user requirement)
+  useEffect(() => {
+    const unsubscribe = aquascapeEvents.onNewFishToast((message) => {
+      // Strictly remove any potential emoji characters
+      const cleanMessage = message
+        .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+        .trim();
+      setToastMessage(cleanMessage);
+      const timer = setTimeout(() => {
+        setToastMessage((curr) => (curr === cleanMessage ? null : curr));
+      }, 4500);
+      return () => clearTimeout(timer);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Fetch real-time repos.json, fish-names.json, and zen-config.json
   useEffect(() => {
@@ -334,6 +351,18 @@ export default function App() {
           })}
         </div>
       </footer>
+
+      {/* Toast Notification for Real-Time Fish Spawning (NO EMOJIS) */}
+      {toastMessage && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/95 border border-teal-500/40 shadow-2xl backdrop-blur-md text-sm text-slate-100"
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-teal-400 shrink-0" />
+          <span className="font-medium tracking-wide">{toastMessage}</span>
+        </aside>
+      )}
     </div>
   );
 }

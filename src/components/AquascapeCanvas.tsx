@@ -6,6 +6,7 @@ import {
   createFishSchool,
   syncFishSchool,
   adjustFishPositionsForResize,
+  createSingleFish,
   drawAngelfish,
   drawRasbora,
   drawGuppy,
@@ -19,6 +20,9 @@ import {
   drawTurtle,
   getFishOrientation,
 } from './fishRenderer';
+import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
+import { isSupabaseModeActive } from '../services/supabaseFishService';
+import { CommunalFishInput } from './aquascapeEvents';
 import {
   updateFishLifeCycle,
   feedFishKuaci,
@@ -44,6 +48,56 @@ interface PlantStem {
   phase: number;
   speed: number;
   leafType: 'blade' | 'rotala' | 'broad' | 'hairgrass';
+}
+
+export function applyCommunalFishesToSchool(
+  currentFish: FishParticle[],
+  communalList: CommunalFishInput[],
+  width: number,
+  height: number
+): FishParticle[] {
+  if (!communalList || communalList.length === 0) return currentFish;
+
+  const usedNames = new Set<string>(currentFish.map((f) => f.name));
+  const communalFish: FishParticle[] = [];
+
+  communalList.forEach((communal, idx) => {
+    // 1. Check if an active communal fish particle already exists
+    const existing = currentFish.find(
+      (f) =>
+        f.isCommunal &&
+        !communalFish.includes(f) &&
+        ((f.communalId !== undefined && f.communalId === communal.id) ||
+          (f.name === communal.name && f.type === communal.species))
+    );
+
+    if (existing) {
+      existing.name = communal.name;
+      existing.type = communal.species;
+      existing.isCommunal = true;
+      existing.communalId = communal.id;
+      communalFish.push(existing);
+    } else {
+      // 2. Spawn a dedicated communal fish! (Communal fish are added on top of regular fish)
+      const newFish = createSingleFish(
+        communal.species,
+        Date.now() + idx + 5000,
+        width,
+        height,
+        usedNames,
+        communal.name,
+        true
+      );
+      newFish.communalId = communal.id;
+      usedNames.add(newFish.name);
+      communalFish.push(newFish);
+    }
+  });
+
+  // Keep ALL non-communal regular fish from .json!
+  const regularFish = currentFish.filter((f) => !f.isCommunal);
+
+  return [...regularFish, ...communalFish];
 }
 
 export const AquascapeCanvas: React.FC<CanvasProps> = ({
@@ -160,11 +214,45 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           'turtle',
         ] as FishSpeciesType[]);
 
+    const supabaseMode = isSupabaseModeActive();
+
     if (fishRef.current.length === 0) {
-      const fish = createFishSchool(width, height, targetDensity, activeSpecies);
+      // 1. Inherit from active provider if another canvas (e.g. Hero canvas when Zen mounts) already has live fish!
+      const existingLive = aquascapeEvents.getExistingFishList();
+      let fish: FishParticle[];
+
+      if (existingLive && existingLive.length > 0) {
+        fish = existingLive.map((f) => ({
+          ...f,
+          id: f.id,
+          x: Math.min(Math.max(20, (f.x / 800) * width), width - 20),
+          y: Math.min(Math.max(20, (f.y / 500) * height), height - 20),
+        }));
+      } else {
+        fish = createFishSchool(width, height, targetDensity, activeSpecies, supabaseMode);
+      }
+
+      // 2. Unconditionally sync all communal fish from Supabase (bypasses activeSpecies & density limits)
+      const communalList = getActiveCommunalFishes();
+      if (communalList.length > 0) {
+        fish = applyCommunalFishesToSchool(fish, communalList, width, height);
+      }
+
       fishRef.current = fish;
       setFishCount(fish.length);
     } else {
+      // Canvas already has fish (e.g. Zen canvas whose density effect ran on mount
+      // before this init). Still merge in ALL communal fish so switching canvases
+      // never drops Supabase fauna, then reconcile positions.
+      const communalList = getActiveCommunalFishes();
+      if (communalList.length > 0) {
+        fishRef.current = applyCommunalFishesToSchool(
+          fishRef.current,
+          communalList,
+          width,
+          height
+        );
+      }
       adjustFishPositionsForResize(fishRef.current, width, height);
       setFishCount(fishRef.current.length);
     }
@@ -271,6 +359,56 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     }
   }, [settings.activeSpecies, onRegenerate]);
 
+  const syncCommunalFish = useCallback(
+    (communalList: Array<{ id?: string | number; name: string; species: FishSpeciesType }>) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const w = rect.width > 0 ? rect.width : 800;
+      const h = rect.height > 0 ? rect.height : 500;
+
+      fishRef.current = applyCommunalFishesToSchool(fishRef.current, communalList, w, h);
+      setFishCount(fishRef.current.length);
+      aquascapeEvents.notifyFishRosterChanged();
+    },
+    []
+  );
+
+  const spawnFish = useCallback(
+    (species: FishSpeciesType, name?: string) => {
+      if (!containerRef.current) return undefined;
+      const rect = containerRef.current.getBoundingClientRect();
+      const w = rect.width > 0 ? rect.width : 800;
+      const h = rect.height > 0 ? rect.height : 500;
+
+      const usedNames = new Set(fishRef.current.map((f) => f.name));
+      const finalName = name || getFishName(species, usedNames);
+
+      const newFish = createSingleFish(
+        species,
+        Date.now() + Math.floor(Math.random() * 1000),
+        w,
+        h,
+        usedNames,
+        finalName,
+        true
+      );
+
+      ripplesRef.current.push({
+        x: newFish.x,
+        y: 15,
+        r: 10,
+        opacity: 0.9,
+      });
+      aquascapeAudio.playBubblePop();
+
+      fishRef.current.push(newFish);
+      setFishCount(fishRef.current.length);
+      aquascapeEvents.notifyFishRosterChanged();
+      return newFish;
+    },
+    []
+  );
+
   const canvasIdRef = useRef<string>(isHeroOnly ? 'hero' : `zen-${Math.random()}`);
 
   // Register with aquascapeEvents provider
@@ -285,12 +423,30 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           target.name = newName;
         }
       },
+      syncCommunalFish: (fishes) => syncCommunalFish(fishes),
+      spawnFish: (species, name) => spawnFish(species, name),
     });
 
     return () => {
       unregister();
     };
-  }, [dropFood, spawnBaby]);
+  }, [dropFood, spawnBaby, syncCommunalFish, spawnFish]);
+
+  // Re-apply catalog names when asynchronously loaded
+  useEffect(() => {
+    const unsubscribe = aquascapeEvents.onCatalogLoaded(() => {
+      const usedNames = new Set(
+        fishRef.current.filter((f) => f.isCommunal).map((f) => f.name)
+      );
+      fishRef.current.forEach((f) => {
+        if (!f.isCommunal) {
+          f.name = getFishName(f.type, usedNames);
+        }
+      });
+      aquascapeEvents.notifyFishRosterChanged();
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Dynamically synchronize fish population when density or active species change
   useEffect(() => {
@@ -298,6 +454,20 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     const rect = containerRef.current.getBoundingClientRect();
     const w = rect.width > 0 ? rect.width : 800;
     const h = rect.height > 0 ? rect.height : 500;
+
+    // When this canvas has no fish yet (e.g. Zen modal just mounted), adopt the
+    // LIVE fish objects from any existing canvas so accumulated per-fish state
+    // (kuaci eaten, growth stage, hunger, age) carries over instead of resetting.
+    if (fishRef.current.length === 0) {
+      const existingLive = aquascapeEvents.getExistingFishList();
+      if (existingLive && existingLive.length > 0) {
+        fishRef.current = existingLive.map((f) => ({
+          ...f,
+          x: Math.min(Math.max(20, (f.x / 800) * w), w - 20),
+          y: Math.min(Math.max(20, (f.y / 500) * h), h - 20),
+        }));
+      }
+    }
 
     const defaultDensity = 11;
     const targetDensity = settings.fishDensity || defaultDensity;
@@ -320,7 +490,14 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
             'turtle',
           ] as FishSpeciesType[]);
 
-    fishRef.current = syncFishSchool(fishRef.current, targetDensity, activeSpecies, w, h);
+    fishRef.current = syncFishSchool(
+      fishRef.current,
+      targetDensity,
+      activeSpecies,
+      w,
+      h,
+      isSupabaseModeActive()
+    );
     setFishCount(fishRef.current.length);
     aquascapeEvents.notifyFishRosterChanged();
   }, [settings.fishDensity, settings.activeSpecies]);
@@ -734,7 +911,12 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       // -------------------------------------------------------------
       // 7. Living Fish Simulation & Mascot Rendering
       // -------------------------------------------------------------
-      const enableLifeCycle = currentSettings.enableLifeCycle ?? true;
+      // In Supabase mode the population is authoritative from the database, so the
+      // natural birth/death life cycle is disabled: a "reborn" fish would otherwise
+      // be recreated with a local fish-names.json name, corrupting the roster.
+      const enableLifeCycle = isSupabaseModeActive()
+        ? false
+        : currentSettings.enableLifeCycle ?? true;
       const usedNames = new Set(fishRef.current.map((f) => f.name));
 
       for (let i = fishRef.current.length - 1; i >= 0; i--) {

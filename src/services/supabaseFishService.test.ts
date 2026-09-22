@@ -8,6 +8,7 @@ import {
   getStartOfTodayISO,
   getTodayDateString,
   SupabaseFishRow,
+  subscribeToSupabaseFish,
 } from './supabaseFishService';
 import { FishCatalogData } from '../data/fishCatalog';
 
@@ -281,6 +282,21 @@ describe('Supabase Fish Service & Data Source Configuration', () => {
 
       const dateStr = getTodayDateString(fixedNow);
       expect(dateStr).toBe('2026-09-22');
+    });
+  });
+
+  describe('subscribeToSupabaseFish & Realtime', () => {
+    it('should initialize and return cleanup function', () => {
+      const mockCallback = vi.fn();
+      const cleanup = subscribeToSupabaseFish(
+        'https://example.supabase.co',
+        'test-anon-key',
+        'communal_fishes',
+        mockCallback
+      );
+
+      expect(typeof cleanup).toBe('function');
+      cleanup();
     });
   });
 });

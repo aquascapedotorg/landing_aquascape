@@ -1,3 +1,4 @@
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { FishSpeciesType } from '../types';
 import { FishCatalogData } from '../data/fishCatalog';
 
@@ -101,6 +102,25 @@ export function getFishDataSourceConfig(): FishDataSourceConfig {
 }
 
 /**
+ * Runtime flag indicating whether Supabase has been selected AND successfully
+ * initialised as the active fish data source. Components read this synchronously
+ * to decide whether the canvas should be driven entirely by Supabase communal
+ * fish (plus mascot) instead of the local fish-names.json ecosystem school.
+ *
+ * It only flips to `true` once loadFishNamesCatalog confirms usable credentials,
+ * so a misconfigured .env safely falls back to local behaviour.
+ */
+let supabaseModeActive = false;
+
+export function setSupabaseModeActive(active: boolean): void {
+  supabaseModeActive = active;
+}
+
+export function isSupabaseModeActive(): boolean {
+  return supabaseModeActive;
+}
+
+/**
  * Checks if a given timestamp or date string belongs to today (same calendar date).
  * Supports ISO strings, YYYY-MM-DD date strings, timestamps, and Date objects.
  */
@@ -158,6 +178,15 @@ export function getTodayDateString(referenceDate: Date = new Date()): string {
 /**
  * Fetches fish rows from Supabase REST API, filtered to load only names from the current day (today).
  */
+export const seenSupabaseFishIds = new Set<string | number>();
+
+export function registerSeenSupabaseFishIds(ids: Array<string | number>): void {
+  ids.forEach((id) => seenSupabaseFishIds.add(id));
+}
+
+/**
+ * Fetches fish rows from Supabase REST API, filtered to load only names from the current day (today).
+ */
 export async function fetchFishFromSupabase(
   url: string,
   anonKey: string,
@@ -166,14 +195,6 @@ export async function fetchFishFromSupabase(
 ): Promise<SupabaseFishRow[]> {
   const cleanUrl = url.replace(/\/+$/, '');
   const startOfToday = getStartOfTodayISO(referenceDate);
-  const todayDate = getTodayDateString(referenceDate);
-
-  // Attempt 1: Query with PostgREST filter for created_at >= startOfToday or date = todayDate
-  const endpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(
-    tableName
-  )}?select=*&or=(created_at.gte.${encodeURIComponent(
-    startOfToday
-  )},date.eq.${encodeURIComponent(todayDate)})&order=created_at.desc`;
 
   const headers = {
     apikey: anonKey,
@@ -182,20 +203,23 @@ export async function fetchFishFromSupabase(
     Accept: 'application/json',
   };
 
+  // Attempt 1: Query with PostgREST filter for created_at >= startOfToday
+  const endpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(
+    tableName
+  )}?select=*&created_at=gte.${encodeURIComponent(startOfToday)}&order=created_at.desc`;
+
   let response = await fetch(endpoint, {
     method: 'GET',
     headers,
   });
 
-  // If complex filter failed (e.g. column 'date' does not exist in schema), fallback to simpler query
+  // Attempt 2: If created_at filtering fails, fallback to select=* and do client-side filter
   if (!response.ok) {
-    const simpleEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(
-      tableName
-    )}?select=*&created_at=gte.${encodeURIComponent(startOfToday)}&order=created_at.desc`;
-    response = await fetch(simpleEndpoint, { method: 'GET', headers });
+    const fallbackEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(tableName)}?select=*&order=id.desc`;
+    response = await fetch(fallbackEndpoint, { method: 'GET', headers });
   }
 
-  // If still not ok (e.g. created_at column missing), query select=* and do client-side date filter
+  // Attempt 3: plain select=*
   if (!response.ok) {
     const fallbackEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(tableName)}?select=*`;
     response = await fetch(fallbackEndpoint, { method: 'GET', headers });
@@ -213,7 +237,126 @@ export async function fetchFishFromSupabase(
     throw new Error('Supabase response format invalid: expected array of fish records');
   }
 
+  // Register seen IDs so realtime/polling does not treat existing rows as newly spawned
+  data.forEach((row: SupabaseFishRow) => {
+    if (row && row.id !== undefined && row.id !== null) {
+      seenSupabaseFishIds.add(row.id);
+    }
+  });
+
   return data as SupabaseFishRow[];
+}
+
+let activeRealtimeCleanup: (() => void) | null = null;
+
+/**
+ * Subscribes to Supabase Realtime changes and provides background polling fallback.
+ * Emits onNewFish whenever a new communal fish from today is inserted.
+ */
+export function subscribeToSupabaseFish(
+  url: string,
+  anonKey: string,
+  tableName: string = 'communal_fishes',
+  onNewFish: (fish: SupabaseFishRow) => void,
+  referenceDate: Date = new Date()
+): () => void {
+  if (activeRealtimeCleanup) {
+    activeRealtimeCleanup();
+    activeRealtimeCleanup = null;
+  }
+
+  const cleanUrl = url.replace(/\/+$/, '');
+  let isSubscribed = true;
+
+  // 1. Setup Supabase Client Realtime Channel
+  let supabase: SupabaseClient | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let channel: any = null;
+
+  try {
+    supabase = createClient(cleanUrl, anonKey, {
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+    });
+
+    channel = supabase
+      .channel(`realtime_${tableName}_${Date.now()}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: tableName },
+        (payload: { new: SupabaseFishRow }) => {
+          if (!isSubscribed) return;
+          const newRow = payload.new;
+          if (!newRow || !newRow.name) return;
+
+          const rawDate =
+            newRow.created_at ||
+            (newRow as Record<string, unknown>).entry_date ||
+            (newRow as Record<string, unknown>).date ||
+            (newRow as Record<string, unknown>).tanggal;
+
+          if (rawDate && !isDateToday(rawDate as string, referenceDate)) {
+            return;
+          }
+
+          if (newRow.id !== undefined && newRow.id !== null) {
+            if (seenSupabaseFishIds.has(newRow.id)) return;
+            seenSupabaseFishIds.add(newRow.id);
+          }
+
+          console.log('[Aquascape Realtime] New fish received via WebSocket:', newRow);
+          onNewFish(newRow);
+        }
+      )
+      .subscribe((status: string) => {
+        console.log(`[Aquascape Realtime] Channel status: ${status}`);
+      });
+  } catch (err) {
+    console.warn('[Aquascape Realtime] WebSocket setup error:', err);
+  }
+
+  // 2. Setup background polling fallback (every 7 seconds)
+  const pollIntervalId = setInterval(async () => {
+    if (!isSubscribed) return;
+    try {
+      const rows = await fetchFishFromSupabase(cleanUrl, anonKey, tableName, referenceDate);
+      for (const row of rows) {
+        if (!row || !row.name) continue;
+        const rawDate =
+          row.created_at ||
+          (row as Record<string, unknown>).entry_date ||
+          (row as Record<string, unknown>).date ||
+          (row as Record<string, unknown>).tanggal;
+
+        if (rawDate && !isDateToday(rawDate as string, referenceDate)) {
+          continue;
+        }
+
+        const idKey = row.id ?? `${row.name}-${row.created_at}`;
+        if (!seenSupabaseFishIds.has(idKey)) {
+          seenSupabaseFishIds.add(idKey);
+          console.log('[Aquascape Polling] New fish detected via poll:', row);
+          onNewFish(row);
+        }
+      }
+    } catch {
+      // Ignore background poll errors
+    }
+  }, 7000);
+
+  const cleanup = () => {
+    isSubscribed = false;
+    clearInterval(pollIntervalId);
+    if (supabase && channel) {
+      supabase.removeChannel(channel).catch(() => {});
+    }
+  };
+
+  activeRealtimeCleanup = cleanup;
+  return cleanup;
 }
 
 /**

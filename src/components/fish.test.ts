@@ -537,5 +537,83 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     // Rendering drawTurtle should execute cleanly without error
     expect(() => drawTurtle(mockCtx, turtle, 0.1, 1.0)).not.toThrow();
   });
+
+  it('should support creating communal fish with custom name and isCommunal flag', () => {
+    const usedNames = new Set<string>();
+    const communalFish = createSingleFish('neonTetra', 201, 800, 500, usedNames, 'Budi Santoso', true);
+    expect(communalFish.name).toBe('Budi Santoso');
+    expect(communalFish.type).toBe('neonTetra');
+    expect(communalFish.isCommunal).toBe(true);
+  });
+
+  it('should preserve communal fish in syncFishSchool even if species is not in activeSpecies and density is exceeded', () => {
+    const usedNames = new Set<string>();
+    // Setup initial school with 5 oceanic fish (density = 5)
+    const activeSpecies: FishSpeciesType[] = ['shark', 'whale', 'orca'];
+    const initialFish: FishParticle[] = [
+      createSingleFish('mascot', 1, 800, 500, usedNames),
+      createSingleFish('shark', 2, 800, 500, usedNames),
+      createSingleFish('whale', 3, 800, 500, usedNames),
+      // Add communal neonTetra from Supabase (species NOT in activeSpecies, count now 4)
+      createSingleFish('neonTetra', 4, 800, 500, usedNames, 'Supabase Tetra 1', true),
+      createSingleFish('neonTetra', 5, 800, 500, usedNames, 'Supabase Tetra 2', true),
+      createSingleFish('orca', 6, 800, 500, usedNames, 'Supabase Orca', true),
+    ];
+
+    // Request sync with density = 3 (lower than count of 6) and activeSpecies ONLY oceanic
+    const synced = syncFishSchool(initialFish, 3, activeSpecies, 800, 500);
+
+    // Communal fish must ALL be preserved regardless of activeSpecies or density limit
+    const communalNames = synced.filter((f) => f.isCommunal).map((f) => f.name);
+    expect(communalNames).toContain('Supabase Tetra 1');
+    expect(communalNames).toContain('Supabase Tetra 2');
+    expect(communalNames).toContain('Supabase Orca');
+
+    // Species 'neonTetra' must still be present despite not being in activeSpecies
+    const speciesPresent = synced.map((f) => f.type);
+    expect(speciesPresent).toContain('neonTetra');
+
+    // Mascot must also be preserved
+    expect(speciesPresent).toContain('mascot');
+  });
+
+  it('createFishSchool in Supabase mode returns only a single mascot (no local .json fish)', () => {
+    const school = createFishSchool(800, 500, 11, ['neonTetra', 'shark', 'whale'], true);
+    expect(school).toHaveLength(1);
+    expect(school[0].type).toBe('mascot');
+  });
+
+  it('syncFishSchool in Supabase mode keeps ALL communal fish + one mascot, dropping local school fish', () => {
+    const usedNames = new Set<string>();
+    const initialFish: FishParticle[] = [
+      createSingleFish('mascot', 1, 800, 500, usedNames),
+      // Local .json ecosystem fish that must be dropped in Supabase mode
+      createSingleFish('shark', 2, 800, 500, usedNames),
+      createSingleFish('whale', 3, 800, 500, usedNames),
+      createSingleFish('rasbora', 4, 800, 500, usedNames),
+      // Communal fish from Supabase that must ALL survive
+      createSingleFish('neonTetra', 5, 800, 500, usedNames, 'Supabase Ali', true),
+      createSingleFish('dolphin', 6, 800, 500, usedNames, 'Supabase Sibal', true),
+      createSingleFish('orca', 7, 800, 500, usedNames, 'Supabase Budi', true),
+    ];
+
+    // Even with a tiny density (2) and restrictive activeSpecies, communal fish stay in full.
+    const synced = syncFishSchool(initialFish, 2, ['mascot', 'whale'], 800, 500, true);
+
+    const communalNames = synced.filter((f) => f.isCommunal).map((f) => f.name);
+    expect(communalNames).toEqual(
+      expect.arrayContaining(['Supabase Ali', 'Supabase Sibal', 'Supabase Budi'])
+    );
+    expect(communalNames).toHaveLength(3);
+
+    // Exactly one non-communal fish remains, and it is the mascot (no local school fish).
+    const regular = synced.filter((f) => !f.isCommunal);
+    expect(regular).toHaveLength(1);
+    expect(regular[0].type).toBe('mascot');
+
+    // The dropped local shark/whale/rasbora must be gone as regular fish.
+    expect(synced.filter((f) => !f.isCommunal && f.type === 'shark')).toHaveLength(0);
+    expect(synced.filter((f) => !f.isCommunal && f.type === 'rasbora')).toHaveLength(0);
+  });
 });
 

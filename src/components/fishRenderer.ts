@@ -13,6 +13,25 @@ export function createSingleFish(
   id: number,
   width: number,
   height: number,
+  usedNames: Set<string>,
+  customName?: string,
+  isCommunal?: boolean
+): FishParticle {
+  const fish = buildRawFish(species, id, width, height, usedNames);
+  if (customName) {
+    fish.name = customName;
+  }
+  if (isCommunal) {
+    fish.isCommunal = true;
+  }
+  return fish;
+}
+
+function buildRawFish(
+  species: FishSpeciesType,
+  id: number,
+  width: number,
+  height: number,
   usedNames: Set<string>
 ): FishParticle {
   if (species === 'mascot') {
@@ -380,10 +399,20 @@ export function createFishSchool(
     'pufferfish',
     'orca',
     'turtle',
-  ]
+  ],
+  supabaseMode: boolean = false
 ): FishParticle[] {
   const fish: FishParticle[] = [];
   const usedNames = new Set<string>();
+
+  // In Supabase mode the tank population comes entirely from communal fish.
+  // The only ecosystem fish we keep is a single Aquascape mascot for identity,
+  // so we do not dilute the canvas with local fish-names.json defaults.
+  if (supabaseMode) {
+    fish.push(createSingleFish('mascot', 1, width, height, usedNames));
+    return fish;
+  }
+
   const speciesList =
     activeSpecies.length > 0
       ? activeSpecies
@@ -452,10 +481,25 @@ export function syncFishSchool(
     'turtle',
   ],
   width: number = 800,
-  height: number = 500
+  height: number = 500,
+  supabaseMode: boolean = false
 ): FishParticle[] {
   if (!existingFish || existingFish.length === 0) {
-    return createFishSchool(width, height, totalCount, activeSpecies);
+    return createFishSchool(width, height, totalCount, activeSpecies, supabaseMode);
+  }
+
+  // Supabase mode: the tank is driven entirely by communal fish. Keep every
+  // communal fish untouched, and reduce the ecosystem school to a single mascot
+  // regardless of density / activeSpecies filters (which now only conceptually
+  // apply to the local school that we intentionally suppress here).
+  if (supabaseMode) {
+    const communalOnly = existingFish.filter((f) => f.isCommunal);
+    const existingMascot = existingFish.find((f) => !f.isCommunal && f.type === 'mascot');
+    const usedNames = new Set<string>(existingFish.map((f) => f.name));
+    const maxId = existingFish.reduce((max, f) => Math.max(max, f.id), 0);
+    const mascot =
+      existingMascot || createSingleFish('mascot', maxId + 1, width, height, usedNames);
+    return [mascot, ...communalOnly];
   }
 
   const speciesList =
@@ -479,50 +523,55 @@ export function syncFishSchool(
 
   const targetCount = Math.max(1, totalCount);
 
-  // 1. Filter existing fish: keep those whose species is still active (always keep mascot)
-  let updatedFish = existingFish.filter(
-    (f) => f.type === 'mascot' || speciesList.includes(f.type)
+  // 1. Separate communal fish from regular school fish
+  const communalFish = existingFish.filter((f) => f.isCommunal);
+  let regularFish = existingFish.filter(
+    (f) => !f.isCommunal && (f.type === 'mascot' || speciesList.includes(f.type))
   );
 
-  const usedNames = new Set<string>(updatedFish.map((f) => f.name));
-  let maxId = updatedFish.reduce((max, f) => Math.max(max, f.id), 0);
+  const usedNames = new Set<string>([
+    ...communalFish.map((f) => f.name),
+    ...regularFish.map((f) => f.name),
+  ]);
+  let maxId = existingFish.reduce((max, f) => Math.max(max, f.id), 0);
 
-  // 2. If existing fish exceeds targetCount, trim from the end (preserving mascot & baby fish if possible)
-  if (updatedFish.length > targetCount) {
-    const mascotFish = updatedFish.filter((f) => f.type === 'mascot');
-    const nonMascots = updatedFish.filter((f) => f.type !== 'mascot');
-    const allowedNonMascots = Math.max(0, targetCount - mascotFish.length);
+  // 2. targetCount applies to regular school fish (communal fish are ALWAYS preserved on top!)
+  const mascotFish = regularFish.filter((f) => f.type === 'mascot');
+  const otherRegular = regularFish.filter((f) => f.type !== 'mascot');
+  const allowedOtherRegular = Math.max(0, targetCount - mascotFish.length);
 
+  if (otherRegular.length > allowedOtherRegular) {
     // Keep younger/baby fish first
-    nonMascots.sort((a, b) => {
+    otherRegular.sort((a, b) => {
       const stageWeight = (s: string) => (s === 'baby' ? 0 : s === 'juvenile' ? 1 : 2);
       return stageWeight(a.stage) - stageWeight(b.stage);
     });
 
-    updatedFish = [...mascotFish, ...nonMascots.slice(0, allowedNonMascots)];
+    regularFish = [...mascotFish, ...otherRegular.slice(0, allowedOtherRegular)];
   }
 
-  // 3. Ensure all active species are represented if we still need more fish
-  const presentSpecies = new Set<FishSpeciesType>(updatedFish.map((f) => f.type));
+  // 3. Ensure all active species from regular school are represented if capacity allows
+  const presentSpecies = new Set<FishSpeciesType>(regularFish.map((f) => f.type));
   for (const sp of speciesList) {
-    if (updatedFish.length >= targetCount) break;
+    if (regularFish.length >= targetCount) break;
     if (!presentSpecies.has(sp)) {
       maxId++;
-      updatedFish.push(createSingleFish(sp, maxId, width, height, usedNames));
+      regularFish.push(createSingleFish(sp, maxId, width, height, usedNames));
       presentSpecies.add(sp);
     }
   }
 
-  // 4. Fill remaining slots up to targetCount
+  // 4. Fill remaining slots for regular school up to targetCount
   let loopIndex = 0;
-  while (updatedFish.length < targetCount) {
+  while (regularFish.length < targetCount) {
     const nextSpecies = speciesList[loopIndex % speciesList.length];
     maxId++;
-    updatedFish.push(createSingleFish(nextSpecies, maxId, width, height, usedNames));
+    regularFish.push(createSingleFish(nextSpecies, maxId, width, height, usedNames));
     loopIndex++;
   }
 
-  return updatedFish;
+  // Combine ALL regular fish from .json + ALL communal fish from Supabase!
+  return [...regularFish, ...communalFish];
 }
 
 /**

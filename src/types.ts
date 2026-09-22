@@ -72,6 +72,8 @@ export interface FishParticle {
   growthPoints: number;
   ageSec: number;
   fadeOpacity?: number;
+  isCommunal?: boolean;
+  communalId?: string | number;
 }
 
 export interface BubbleParticle {

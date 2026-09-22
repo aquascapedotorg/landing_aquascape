@@ -53,11 +53,43 @@ export function getFishName(
   return fallback;
 }
 
+export interface CommunalFishData {
+  id?: string | number;
+  name: string;
+  species: FishSpeciesType;
+}
+
+export let activeCommunalFishes: CommunalFishData[] = [];
+
+export function getActiveCommunalFishes(): CommunalFishData[] {
+  return [...activeCommunalFishes];
+}
+
+export function setActiveCommunalFishes(fishes: CommunalFishData[]): void {
+  activeCommunalFishes = [...fishes];
+}
+
+export function addActiveCommunalFish(fish: CommunalFishData): void {
+  const exists = activeCommunalFishes.some(
+    (f) =>
+      (f.id !== undefined && f.id === fish.id) ||
+      (f.name === fish.name && f.species === fish.species)
+  );
+  if (!exists) {
+    activeCommunalFishes.push(fish);
+  }
+}
+
 import {
   getFishDataSourceConfig,
   fetchFishFromSupabase,
   applySupabaseFishData,
+  normalizeFishSpecies,
+  isDateToday,
+  subscribeToSupabaseFish,
+  setSupabaseModeActive,
 } from '../services/supabaseFishService';
+import { aquascapeEvents } from '../components/aquascapeEvents';
 
 /**
  * Asynchronously loads fish names based on .env configuration:
@@ -86,8 +118,15 @@ export async function loadFishNamesCatalog(): Promise<void> {
       console.warn(
         '[Aquascape] VITE_FISH_DATA_SOURCE=supabase aktif, namun VITE_SUPABASE_URL atau VITE_SUPABASE_ANON_KEY belum diisi di .env. Menggunakan nama dari fish-names.json.'
       );
+      setSupabaseModeActive(false);
+      aquascapeEvents.notifyCatalogLoaded();
       return;
     }
+
+    // Credentials are present: activate Supabase-driven canvas mode so the tank
+    // is populated entirely by Supabase communal fish (plus mascot), not the
+    // local fish-names.json ecosystem school.
+    setSupabaseModeActive(true);
 
     try {
       const rows = await fetchFishFromSupabase(
@@ -97,16 +136,76 @@ export async function loadFishNamesCatalog(): Promise<void> {
       );
 
       if (rows && rows.length > 0) {
-        const { appliedCount } = applySupabaseFishData(rows, FISH_CATALOG);
+        // Filter rows belonging to today
+        const todayRows = rows.filter((r) => {
+          const rawDate =
+            r.created_at ||
+            (r as Record<string, unknown>).entry_date ||
+            (r as Record<string, unknown>).date ||
+            (r as Record<string, unknown>).tanggal;
+          return !rawDate || isDateToday(rawDate as string);
+        });
+
+        const { appliedCount } = applySupabaseFishData(todayRows, FISH_CATALOG);
         console.log(
-          `[Aquascape] Berhasil memuat ${appliedCount} nama ikan dari Supabase (${config.tableName}).`
+          `[Aquascape] Berhasil memuat ${appliedCount} nama ikan hari ini dari Supabase (${config.tableName}).`
         );
+
+        // Convert today's rows into communal fish input (defaulting species to 'neonTetra' if null/empty)
+        const communalFishes = todayRows.map((r) => ({
+          id: r.id,
+          name: (r.name || 'Ikan Komunal').trim().slice(0, 25),
+          species: normalizeFishSpecies(r.species),
+        }));
+
+        setActiveCommunalFishes(communalFishes);
+
+        // Immediately sync communal fish into canvas without requiring refresh
+        aquascapeEvents.syncCommunalFish(communalFishes);
       }
+
+      // Notify canvas that catalog has completed loading
+      aquascapeEvents.notifyCatalogLoaded();
+
+      // 3. Start Realtime listener for live updates without page refresh
+      subscribeToSupabaseFish(
+        config.supabaseUrl,
+        config.supabaseAnonKey,
+        config.tableName,
+        (newRow) => {
+          const targetSpecies = normalizeFishSpecies(newRow.species);
+          const safeName = (newRow.name || 'Ikan Komunal').trim().slice(0, 25);
+
+          addActiveCommunalFish({
+            id: newRow.id,
+            name: safeName,
+            species: targetSpecies,
+          });
+
+          // Update memory catalog
+          applySupabaseFishData([newRow], FISH_CATALOG);
+
+          // Spawn dynamically into the tank
+          aquascapeEvents.spawnFish(targetSpecies, safeName);
+
+          // Clean toast message without any emojis
+          const speciesLabel =
+            FISH_CATALOG.species.find((s) => s.id === targetSpecies)?.name || targetSpecies;
+          aquascapeEvents.notifyNewFishToast(
+            `Ikan baru bergabung di kolam: ${safeName} (${speciesLabel})`,
+            targetSpecies
+          );
+        }
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       console.warn(
         `[Aquascape] Gagal memuat nama ikan dari Supabase: ${message}. Menggunakan fallback lokal (fish-names.json).`
       );
+      aquascapeEvents.notifyCatalogLoaded();
     }
+  } else {
+    setSupabaseModeActive(false);
+    aquascapeEvents.notifyCatalogLoaded();
   }
 }

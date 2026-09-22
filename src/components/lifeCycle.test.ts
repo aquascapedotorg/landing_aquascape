@@ -185,5 +185,35 @@ describe('Fish Life Cycle & Regeneration System (TDD)', () => {
     expect(mascotFish.stage).toBe('adult');
     expect(result.rebornNeeded).toBe(false);
   });
+
+  it('should never age or reborn a communal (Supabase) fish even with life cycle enabled', () => {
+    const communalFish: FishParticle = {
+      id: 501,
+      name: 'Budi Santoso',
+      x: 200,
+      y: 200,
+      vx: 1,
+      vy: 0,
+      size: 20,
+      baseSize: 20,
+      type: 'neonTetra',
+      color: '#00f7ff',
+      angle: 0,
+      tailPhase: 0,
+      tailSpeed: 0.2,
+      hunger: 10,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 6,
+      ageSec: 5000,
+      isCommunal: true,
+      communalId: 9,
+    };
+
+    // Even with a huge age and life cycle enabled, a communal fish stays adult and never asks to be reborn.
+    const result = updateFishLifeCycle(communalFish, 100, { enableLifeCycle: true });
+    expect(communalFish.stage).toBe('adult');
+    expect(result.rebornNeeded).toBe(false);
+  });
 });
 

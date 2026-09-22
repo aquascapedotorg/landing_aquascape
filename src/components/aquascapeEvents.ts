@@ -1,15 +1,25 @@
-import { FishParticle } from '../types';
+import { FishParticle, FishSpeciesType } from '../types';
+
+export interface CommunalFishInput {
+  id?: string | number;
+  name: string;
+  species: FishSpeciesType;
+}
 
 export interface AquascapeCanvasProvider {
   dropFood?: (x?: number, y?: number) => void;
   spawnBaby?: () => void;
   getFishList?: () => FishParticle[];
   renameFish?: (id: number, newName: string) => void;
+  syncCommunalFish?: (fishes: CommunalFishInput[]) => void;
+  spawnFish?: (species: FishSpeciesType, name?: string) => FishParticle | undefined;
 }
 
 class AquascapeEventManager {
   private providers: { id: string; provider: AquascapeCanvasProvider }[] = [];
   private rosterListeners: (() => void)[] = [];
+  private catalogListeners: (() => void)[] = [];
+  private toastListeners: ((message: string, species?: FishSpeciesType) => void)[] = [];
 
   /**
    * Registers a canvas provider. The most recently registered provider becomes active.
@@ -83,11 +93,88 @@ class AquascapeEventManager {
     return [];
   }
 
+  /**
+   * Retrieves live fish list from ANY registered provider that currently has fish.
+   * Useful when a new canvas (like Zen modal) mounts and needs to inherit existing live fish.
+   */
+  public getExistingFishList(): FishParticle[] {
+    for (const p of this.providers) {
+      if (p.provider.getFishList) {
+        const list = p.provider.getFishList();
+        if (list && list.length > 0) {
+          return list;
+        }
+      }
+    }
+    return [];
+  }
+
   public renameFish(id: number, newName: string): void {
     const active = this.getActiveProvider();
     if (active?.renameFish) {
       active.renameFish(id, newName);
     }
+  }
+
+  public syncCommunalFish(fishes: CommunalFishInput[]): void {
+    this.providers.forEach((p) => {
+      if (p.provider.syncCommunalFish) {
+        try {
+          p.provider.syncCommunalFish(fishes);
+        } catch (err) {
+          console.error('Error syncing communal fish on provider:', err);
+        }
+      }
+    });
+  }
+
+  public spawnFish(species: FishSpeciesType, name?: string): FishParticle | undefined {
+    let result: FishParticle | undefined;
+    this.providers.forEach((p) => {
+      if (p.provider.spawnFish) {
+        try {
+          const spawned = p.provider.spawnFish(species, name);
+          if (spawned) result = spawned;
+        } catch (err) {
+          console.error('Error spawning fish on provider:', err);
+        }
+      }
+    });
+    return result;
+  }
+
+  public onCatalogLoaded(listener: () => void): () => void {
+    this.catalogListeners.push(listener);
+    return () => {
+      this.catalogListeners = this.catalogListeners.filter((l) => l !== listener);
+    };
+  }
+
+  public notifyCatalogLoaded(): void {
+    this.catalogListeners.forEach((l) => {
+      try {
+        l();
+      } catch (err) {
+        console.error('Error in catalog loaded listener:', err);
+      }
+    });
+  }
+
+  public onNewFishToast(listener: (message: string, species?: FishSpeciesType) => void): () => void {
+    this.toastListeners.push(listener);
+    return () => {
+      this.toastListeners = this.toastListeners.filter((l) => l !== listener);
+    };
+  }
+
+  public notifyNewFishToast(message: string, species?: FishSpeciesType): void {
+    this.toastListeners.forEach((l) => {
+      try {
+        l(message, species);
+      } catch (err) {
+        console.error('Error in new fish toast listener:', err);
+      }
+    });
   }
 
   /**
