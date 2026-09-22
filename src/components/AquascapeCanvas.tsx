@@ -22,6 +22,7 @@ import {
 } from './fishRenderer';
 import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
+import { recordKuaciEaten } from '../services/streakService';
 import { CommunalFishInput } from './aquascapeEvents';
 import {
   updateFishLifeCycle,
@@ -969,6 +970,9 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           if (dist < fish.size * 0.6) {
             (targetFood as FoodParticle).eaten = true;
             const growth = feedFishKuaci(fish);
+            if (fish.isCommunal && fish.name) {
+              recordKuaciEaten(fish.name, 1);
+            }
             if (growth.grew) {
               // Growth evolution ripple
               ripplesRef.current.push({
