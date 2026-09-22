@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { AquascapeCanvas } from './AquascapeCanvas';
 import { AquascapeControls } from './AquascapeControls';
 import { FishCustomizerModal } from './FishCustomizerModal';
+import { StreakLeaderboardDrawer } from './StreakLeaderboardDrawer';
 import { AquascapeSettings } from '../types';
 import { ZEN_CONFIG } from '../data/zenConfig';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
-import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw } from 'lucide-react';
+import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy } from 'lucide-react';
 
 interface ZenProps {
   isOpen: boolean;
@@ -29,11 +30,14 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
   // In Supabase mode the fish roster is fully driven by the database, so manual
   // fauna customization (species/density/naming) does not apply — hide it.
   const supabaseMode = isSupabaseModeActive();
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        if (isFaunaModalOpen) {
+        if (isLeaderboardOpen) {
+          setIsLeaderboardOpen(false);
+        } else if (isFaunaModalOpen) {
           setIsFaunaModalOpen(false);
         } else {
           onClose();
@@ -48,7 +52,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose, isFaunaModalOpen]);
+  }, [isOpen, onClose, isFaunaModalOpen, isLeaderboardOpen]);
 
   if (!isOpen) return null;
 
@@ -118,6 +122,19 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
               </button>
             )}
 
+            {supabaseMode && (
+              <button
+                type="button"
+                id="btn-zen-leaderboard"
+                onClick={() => setIsLeaderboardOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-teal-500/30 text-teal-300 font-semibold text-xs transition-all shadow-lg cursor-pointer active:scale-95 backdrop-blur-md"
+                title="Lihat papan peringkat streak & kuaci"
+              >
+                <Trophy className="w-4 h-4 text-teal-400" />
+                <span className="hidden sm:inline">Ranking</span>
+              </button>
+            )}
+
             {/* Close Zen Button */}
             <button
               type="button"
@@ -154,6 +171,14 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
         settings={settings}
         onUpdateSettings={onUpdateSettings}
       />
+
+      {/* Streak Leaderboard Drawer (Supabase-only) */}
+      {supabaseMode && (
+        <StreakLeaderboardDrawer
+          isOpen={isLeaderboardOpen}
+          onClose={() => setIsLeaderboardOpen(false)}
+        />
+      )}
     </div>
   );
 };
