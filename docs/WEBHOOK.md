@@ -143,7 +143,23 @@ Kirim **array** — semua akan muncul di canvas.
 
 ## 6. Response
 
-**Berhasil** → HTTP `201 Created`. Bila `Prefer: return=representation` dikirim, body-nya:
+**Setiap request SELALU mendapat response.** Endpoint ini adalah REST API Supabase
+(PostgREST), sehingga setiap POST dibalas dengan **HTTP status code** — baik sukses
+maupun gagal. Tidak ada request yang "hening"/tanpa balasan. Pemanggil **wajib**
+memeriksa status code untuk memastikan data tersimpan.
+
+### 6a. Sukses
+
+| Kondisi | Status | Body response |
+|---|---|---|
+| Insert + `Prefer: return=representation` | `201 Created` | Array berisi baris yang dibuat (lihat di bawah) |
+| Insert **tanpa** `Prefer` | `201 Created` | **Kosong** (body `""`) — status tetap `201` |
+
+> Agar response menyertakan data (id, entry_date, dll), **selalu kirim** header
+> `Prefer: return=representation`. Tanpa header itu, insert tetap berhasil tetapi
+> body-nya kosong — Anda hanya menerima status `201`.
+
+Contoh body sukses (dengan `Prefer: return=representation`):
 
 ```json
 [
@@ -157,13 +173,66 @@ Kirim **array** — semua akan muncul di canvas.
 ]
 ```
 
-**Gagal umum:**
+### 6b. Gagal
+
+Response gagal berupa status `4xx` dengan body JSON berisi detail error dari PostgREST,
+misalnya:
+
+```json
+{
+  "code": "23514",
+  "message": "new row for relation \"communal_fishes\" violates check constraint",
+  "details": null,
+  "hint": null
+}
+```
 
 | Status | Penyebab | Solusi |
 |---|---|---|
+| `400` | `name` kosong / JSON tidak valid / melanggar check constraint | `name` wajib berisi minimal 1 karakter non-spasi; pastikan body JSON valid |
 | `401` / `403` | `apikey`/`Authorization` salah atau RLS memblokir | Pastikan anon key benar & policy insert aktif |
-| `400` | `name` kosong / JSON tidak valid | `name` wajib berisi minimal 1 karakter non-spasi |
 | `404` | Nama tabel salah | Pastikan tabel `communal_fishes` ada |
+| `5xx` | Gangguan sementara di Supabase | Coba ulang (retry) beberapa saat kemudian |
+
+### 6c. Cara memeriksa response di sisi pemanggil
+
+**cURL** — tampilkan status code dan body:
+
+```bash
+curl -X POST "https://pxynnorwyyadbfrjvqoe.supabase.co/rest/v1/communal_fishes" \
+  -H "apikey: <SUPABASE_ANON_KEY>" \
+  -H "Authorization: Bearer <SUPABASE_ANON_KEY>" \
+  -H "Content-Type: application/json" \
+  -H "Prefer: return=representation" \
+  -d '{ "name": "Budi Santoso", "species": "shark" }' \
+  -w "\nHTTP %{http_code}\n"
+```
+
+**JavaScript (fetch)** — selalu cek `response.ok` / `response.status`:
+
+```js
+const res = await fetch(ENDPOINT, {
+  method: "POST",
+  headers: {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    "Content-Type": "application/json",
+    Prefer: "return=representation",
+  },
+  body: JSON.stringify({ name: "Budi Santoso", species: "shark" }),
+});
+
+if (res.ok) {
+  const [fish] = await res.json();      // 201 → baris yang dibuat
+  console.log("Ikan tersimpan:", fish.id, fish.name);
+} else {
+  const err = await res.json().catch(() => ({}));
+  console.error(`Gagal (${res.status}):`, err.message || res.statusText);
+}
+```
+
+> Jangan asumsikan sukses hanya karena request terkirim — periksa `res.ok`
+> (status `2xx`). Response selalu tersedia untuk setiap request.
 
 ---
 
