@@ -89,6 +89,7 @@ import {
   subscribeToSupabaseFish,
   setSupabaseModeActive,
 } from '../services/supabaseFishService';
+import { initStreakService } from '../services/streakService';
 import { aquascapeEvents } from '../components/aquascapeEvents';
 
 /**
@@ -127,6 +128,8 @@ export async function loadFishNamesCatalog(): Promise<void> {
     // is populated entirely by Supabase communal fish (plus mascot), not the
     // local fish-names.json ecosystem school.
     setSupabaseModeActive(true);
+    // Start streak/leaderboard tracking (Supabase-only feature).
+    initStreakService();
 
     try {
       const rows = await fetchFishFromSupabase(
