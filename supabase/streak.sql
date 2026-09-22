@@ -45,3 +45,50 @@ grant execute on function public.increment_kuaci(text, int) to anon;
 
 -- Live leaderboard updates
 alter publication supabase_realtime add table public.fish_daily_kuaci;
+
+-- ==============================================================================
+-- STREAK SNAPSHOT (persist computed streaks for fast query & history)
+-- ==============================================================================
+create table if not exists public.fish_streaks (
+  name             text primary key,
+  current_streak   integer not null default 0,
+  best_streak      integer not null default 0,
+  last_active_date date,
+  updated_at       timestamptz not null default now()
+);
+
+alter table public.fish_streaks enable row level security;
+
+create policy "Allow public read access"
+  on public.fish_streaks for select using (true);
+create policy "Allow public insert access"
+  on public.fish_streaks for insert with check (true);
+create policy "Allow public update access"
+  on public.fish_streaks for update using (true) with check (true);
+
+-- Batch upsert of streak snapshots. best_streak never decreases (GREATEST).
+create or replace function public.upsert_streaks(p_rows jsonb)
+returns void language plpgsql security definer as $$
+declare r jsonb;
+begin
+  for r in select * from jsonb_array_elements(p_rows) loop
+    insert into public.fish_streaks (name, current_streak, best_streak, last_active_date, updated_at)
+    values (
+      r->>'name',
+      coalesce((r->>'current_streak')::int, 0),
+      coalesce((r->>'best_streak')::int, 0),
+      nullif(r->>'last_active_date','')::date,
+      now()
+    )
+    on conflict (name) do update set
+      current_streak   = excluded.current_streak,
+      best_streak      = greatest(public.fish_streaks.best_streak, excluded.best_streak),
+      last_active_date = excluded.last_active_date,
+      updated_at       = now();
+  end loop;
+end;
+$$;
+
+grant execute on function public.upsert_streaks(jsonb) to anon;
+
+alter publication supabase_realtime add table public.fish_streaks;
