@@ -298,5 +298,35 @@ describe('Supabase Fish Service & Data Source Configuration', () => {
       expect(typeof cleanup).toBe('function');
       cleanup();
     });
+
+    it('should be idempotent for the same config (no throw on repeat subscribe)', () => {
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
+
+      // First subscribe creates the channel; second with the SAME config must
+      // reuse it (just swap the callback) rather than recreate/destabilise it.
+      const cleanupA = subscribeToSupabaseFish(
+        'https://idempotent.supabase.co',
+        'test-anon-key',
+        'communal_fishes',
+        cb1
+      );
+      const cleanupB = subscribeToSupabaseFish(
+        'https://idempotent.supabase.co',
+        'test-anon-key',
+        'communal_fishes',
+        cb2
+      );
+
+      expect(typeof cleanupA).toBe('function');
+      expect(typeof cleanupB).toBe('function');
+
+      // Cleanups are no-ops for the still-active shared subscription; calling
+      // them must not throw.
+      expect(() => {
+        cleanupA();
+        cleanupB();
+      }).not.toThrow();
+    });
   });
 });

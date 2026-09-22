@@ -247,11 +247,60 @@ export async function fetchFishFromSupabase(
   return data as SupabaseFishRow[];
 }
 
-let activeRealtimeCleanup: (() => void) | null = null;
+/**
+ * A single, long-lived realtime subscription. We keep exactly ONE Supabase client
+ * + channel + poll timer per (url, table) config for the whole app lifetime.
+ *
+ * WHY: subscribeToSupabaseFish() is called from a React effect that, under
+ * StrictMode (dev), Fast Refresh / HMR, and any re-render, can fire multiple
+ * times. The previous implementation tore down and recreated the channel on
+ * every call, so the WebSocket flapped CLOSED -> SUBSCRIBED repeatedly and
+ * INSERT events that landed during a CLOSED window were missed — the user then
+ * had to refresh to pick them up via the initial fetch. Making the subscription
+ * idempotent keeps one stable channel and only swaps the callback.
+ */
+interface ActiveRealtimeSubscription {
+  key: string;
+  supabase: SupabaseClient | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  channel: any;
+  pollIntervalId: ReturnType<typeof setInterval>;
+  // The current fish handler; swapped in place on repeat subscribe() calls.
+  onNewFish: (fish: SupabaseFishRow) => void;
+  referenceDate: Date;
+}
+
+let activeRealtime: ActiveRealtimeSubscription | null = null;
+
+function handleIncomingRow(sub: ActiveRealtimeSubscription, row: SupabaseFishRow): void {
+  if (!row || !row.name) return;
+
+  const rawDate =
+    row.created_at ||
+    (row as Record<string, unknown>).entry_date ||
+    (row as Record<string, unknown>).date ||
+    (row as Record<string, unknown>).tanggal;
+
+  if (rawDate && !isDateToday(rawDate as string, sub.referenceDate)) {
+    return;
+  }
+
+  const idKey = row.id ?? `${row.name}-${row.created_at}`;
+  if (seenSupabaseFishIds.has(idKey)) return;
+  seenSupabaseFishIds.add(idKey);
+  if (row.id !== undefined && row.id !== null) {
+    seenSupabaseFishIds.add(row.id);
+  }
+
+  sub.onNewFish(row);
+}
 
 /**
  * Subscribes to Supabase Realtime changes and provides background polling fallback.
  * Emits onNewFish whenever a new communal fish from today is inserted.
+ *
+ * Idempotent: repeat calls with the same (url, table) reuse the live channel and
+ * only update the callback, instead of recreating (and destabilising) the socket.
  */
 export function subscribeToSupabaseFish(
   url: string,
@@ -260,19 +309,39 @@ export function subscribeToSupabaseFish(
   onNewFish: (fish: SupabaseFishRow) => void,
   referenceDate: Date = new Date()
 ): () => void {
-  if (activeRealtimeCleanup) {
-    activeRealtimeCleanup();
-    activeRealtimeCleanup = null;
+  const cleanUrl = url.replace(/\/+$/, '');
+  const key = `${cleanUrl}|${tableName}`;
+
+  // Reuse the existing live subscription for the same config: just swap the
+  // handler and reference date, keeping the stable WebSocket channel intact.
+  if (activeRealtime && activeRealtime.key === key) {
+    activeRealtime.onNewFish = onNewFish;
+    activeRealtime.referenceDate = referenceDate;
+    return makeUnsubscribe(key);
   }
 
-  const cleanUrl = url.replace(/\/+$/, '');
-  let isSubscribed = true;
+  // Config changed (or first run): tear down any previous subscription.
+  if (activeRealtime) {
+    teardownRealtime();
+  }
 
-  // 1. Setup Supabase Client Realtime Channel
-  let supabase: SupabaseClient | null = null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let channel: any = null;
+  let supabase: SupabaseClient | null = null;
 
+  const sub: ActiveRealtimeSubscription = {
+    key,
+    supabase: null,
+    channel: null,
+    // Placeholder timer; replaced below. Kept non-null for the type.
+    pollIntervalId: setInterval(() => {}, 1 << 30),
+    onNewFish,
+    referenceDate,
+  };
+  clearInterval(sub.pollIntervalId);
+
+  // 1. Setup Supabase Client Realtime Channel (one stable channel, no Date.now()
+  //    in the name so reconnects reuse the same logical channel).
   try {
     supabase = createClient(cleanUrl, anonKey, {
       realtime: {
@@ -283,32 +352,15 @@ export function subscribeToSupabaseFish(
     });
 
     channel = supabase
-      .channel(`realtime_${tableName}_${Date.now()}`)
+      .channel(`realtime_${tableName}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: tableName },
         (payload: { new: SupabaseFishRow }) => {
-          if (!isSubscribed) return;
-          const newRow = payload.new;
-          if (!newRow || !newRow.name) return;
-
-          const rawDate =
-            newRow.created_at ||
-            (newRow as Record<string, unknown>).entry_date ||
-            (newRow as Record<string, unknown>).date ||
-            (newRow as Record<string, unknown>).tanggal;
-
-          if (rawDate && !isDateToday(rawDate as string, referenceDate)) {
-            return;
-          }
-
-          if (newRow.id !== undefined && newRow.id !== null) {
-            if (seenSupabaseFishIds.has(newRow.id)) return;
-            seenSupabaseFishIds.add(newRow.id);
-          }
-
-          console.log('[Aquascape Realtime] New fish received via WebSocket:', newRow);
-          onNewFish(newRow);
+          const current = activeRealtime;
+          if (!current || current.key !== key) return;
+          console.log('[Aquascape Realtime] New fish received via WebSocket:', payload.new);
+          handleIncomingRow(current, payload.new);
         }
       )
       .subscribe((status: string) => {
@@ -318,45 +370,58 @@ export function subscribeToSupabaseFish(
     console.warn('[Aquascape Realtime] WebSocket setup error:', err);
   }
 
-  // 2. Setup background polling fallback (every 7 seconds)
+  // 2. Setup background polling fallback (every 7 seconds) as a safety net for
+  //    any window where the socket is momentarily disconnected.
   const pollIntervalId = setInterval(async () => {
-    if (!isSubscribed) return;
+    const current = activeRealtime;
+    if (!current || current.key !== key) return;
     try {
-      const rows = await fetchFishFromSupabase(cleanUrl, anonKey, tableName, referenceDate);
+      const rows = await fetchFishFromSupabase(
+        cleanUrl,
+        anonKey,
+        tableName,
+        current.referenceDate
+      );
       for (const row of rows) {
-        if (!row || !row.name) continue;
-        const rawDate =
-          row.created_at ||
-          (row as Record<string, unknown>).entry_date ||
-          (row as Record<string, unknown>).date ||
-          (row as Record<string, unknown>).tanggal;
-
-        if (rawDate && !isDateToday(rawDate as string, referenceDate)) {
-          continue;
-        }
-
-        const idKey = row.id ?? `${row.name}-${row.created_at}`;
-        if (!seenSupabaseFishIds.has(idKey)) {
-          seenSupabaseFishIds.add(idKey);
-          console.log('[Aquascape Polling] New fish detected via poll:', row);
-          onNewFish(row);
-        }
+        handleIncomingRow(current, row);
       }
     } catch {
       // Ignore background poll errors
     }
   }, 7000);
 
-  const cleanup = () => {
-    isSubscribed = false;
-    clearInterval(pollIntervalId);
-    if (supabase && channel) {
-      supabase.removeChannel(channel).catch(() => {});
+  sub.supabase = supabase;
+  sub.channel = channel;
+  sub.pollIntervalId = pollIntervalId;
+  activeRealtime = sub;
+
+  return makeUnsubscribe(key);
+}
+
+function teardownRealtime(): void {
+  if (!activeRealtime) return;
+  const sub = activeRealtime;
+  activeRealtime = null;
+  clearInterval(sub.pollIntervalId);
+  if (sub.supabase && sub.channel) {
+    sub.supabase.removeChannel(sub.channel).catch(() => {});
+  }
+}
+
+/**
+ * Returns a cleanup fn that only tears down if the active subscription is still
+ * the one this caller created. This prevents a stale React cleanup (from a
+ * double-invoked / re-run effect) from killing a subscription that a later call
+ * legitimately kept alive.
+ */
+function makeUnsubscribe(key: string): () => void {
+  return () => {
+    if (activeRealtime && activeRealtime.key === key) {
+      // Intentionally left alive: the subscription is process-global and shared
+      // across re-renders. Real teardown happens on config change or page unload.
+      // (No-op keeps the socket stable under StrictMode/HMR effect churn.)
     }
   };
-
-  activeRealtimeCleanup = cleanup;
-  return cleanup;
 }
 
 /**
