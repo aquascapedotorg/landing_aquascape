@@ -258,3 +258,5 @@ Yang wajib aktif untuk webhook:
 
 - Policy **insert** (`Allow public insert access`) agar anon key boleh menambah data.
 - Tabel terdaftar di **`supabase_realtime`** agar ikan muncul live tanpa refresh.
+- Jalankan juga [`supabase/streak.sql`](../supabase/streak.sql) untuk mengaktifkan fitur
+  streak & papan peringkat kuaci (tabel `fish_daily_kuaci` + fungsi `increment_kuaci`).
