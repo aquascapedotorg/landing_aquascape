@@ -24,6 +24,11 @@ concurrency:
 jobs:
   update-and-deploy:
     runs-on: ubuntu-latest
+    # Bind the job to the GitHub Pages environment so its environment-scoped
+    # variables (VITE_*) become available to steps via the `vars` context.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -50,6 +55,14 @@ jobs:
           git push
 
       - name: Build production site
+        # Vite bakes VITE_* values into the bundle at build time, so they must be
+        # present as process env vars during `npm run build`. Map them from the
+        # environment variables here (anon key is a public key, safe to inline).
+        env:
+          VITE_FISH_DATA_SOURCE: ${{ vars.VITE_FISH_DATA_SOURCE }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_FISH_TABLE: ${{ vars.VITE_SUPABASE_FISH_TABLE }}
         run: |
           cp repos.json public/repos.json
           npm run build
