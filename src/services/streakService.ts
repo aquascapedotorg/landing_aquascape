@@ -13,6 +13,7 @@ import {
 import { aquascapeEvents } from '../components/aquascapeEvents';
 
 const FLUSH_INTERVAL_MS = 5000;
+const SNAPSHOT_DEBOUNCE_MS = 10000;
 
 let client: SupabaseClient | null = null;
 let initialised = false;
@@ -22,6 +23,8 @@ const kuaciBuffer = new Map<string, number>();
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let channel: any = null;
+let holidays = new Set<string>();
+let snapshotTimer: ReturnType<typeof setTimeout> | null = null;
 
 function rebuildRankIndex(): void {
   rankByName = new Map();
@@ -30,23 +33,64 @@ function rebuildRankIndex(): void {
   }
 }
 
+async function loadHolidays(): Promise<void> {
+  try {
+    const res = await fetch('./holidays.txt');
+    if (!res.ok) return;
+    const text = await res.text();
+    const set = new Set<string>();
+    for (const line of text.split(/\r?\n/)) {
+      const m = line.match(/\d{4}-\d{2}-\d{2}/);
+      if (m) set.add(m[0]);
+    }
+    holidays = set;
+  } catch {
+    // No holidays file -> only weekends are skipped.
+  }
+}
+
 async function refresh(): Promise<void> {
   if (!client) return;
   const today = toDateString(new Date());
   try {
     const [attRes, kuaciRes] = await Promise.all([
-      client.from('communal_fishes').select('name,entry_date'),
+      client.from('communal_fishes').select('name,entry_date,created_at'),
       client.from('fish_daily_kuaci').select('name,entry_date,kuaci_count'),
     ]);
 
     const attendance = (attRes.data as AttendanceRow[] | null) || [];
     const kuaci = (kuaciRes.data as KuaciRow[] | null) || [];
 
-    leaderboard = computeLeaderboard(attendance, kuaci, today, new Set<string>());
+    leaderboard = computeLeaderboard(attendance, kuaci, today, holidays);
     rebuildRankIndex();
     aquascapeEvents.notifyStreakUpdated();
+    scheduleSnapshot();
   } catch {
     // keep previous leaderboard on transient errors
+  }
+}
+
+function scheduleSnapshot(): void {
+  if (snapshotTimer) return; // already scheduled
+  snapshotTimer = setTimeout(() => {
+    snapshotTimer = null;
+    void writeSnapshot();
+  }, SNAPSHOT_DEBOUNCE_MS);
+}
+
+async function writeSnapshot(): Promise<void> {
+  if (!client || leaderboard.length === 0) return;
+  const rows = leaderboard.map((e) => ({
+    name: e.name,
+    current_streak: e.currentStreak,
+    best_streak: e.bestStreak,
+    last_active_date: e.firstSeen ? e.firstSeen.slice(0, 10) : '',
+  }));
+  try {
+    const { error } = await client.rpc('upsert_streaks', { p_rows: rows });
+    if (error) throw error;
+  } catch (err) {
+    console.warn('[Aquascape Streak] Snapshot write failed, will retry next cycle:', err);
   }
 }
 
@@ -84,7 +128,7 @@ export function initStreakService(): void {
   const cleanUrl = config.supabaseUrl.replace(/\/+$/, '');
   client = createClient(cleanUrl, config.supabaseAnonKey);
 
-  void refresh();
+  void loadHolidays().then(() => refresh());
 
   // Realtime: recompute when a new fish is inserted or kuaci changes.
   try {
@@ -134,6 +178,9 @@ export function isStreakActive(): boolean {
 export function __resetStreakServiceForTest(): void {
   if (flushTimer) clearInterval(flushTimer);
   flushTimer = null;
+  if (snapshotTimer) clearTimeout(snapshotTimer);
+  snapshotTimer = null;
+  holidays = new Set();
   client = null;
   channel = null;
   initialised = false;
