@@ -19,6 +19,7 @@ class AquascapeEventManager {
   private providers: { id: string; provider: AquascapeCanvasProvider }[] = [];
   private rosterListeners: (() => void)[] = [];
   private catalogListeners: (() => void)[] = [];
+  private streakListeners: (() => void)[] = [];
   private toastListeners: ((message: string, species?: FishSpeciesType) => void)[] = [];
 
   /**
@@ -156,6 +157,23 @@ class AquascapeEventManager {
         l();
       } catch (err) {
         console.error('Error in catalog loaded listener:', err);
+      }
+    });
+  }
+
+  public onStreakUpdated(listener: () => void): () => void {
+    this.streakListeners.push(listener);
+    return () => {
+      this.streakListeners = this.streakListeners.filter((l) => l !== listener);
+    };
+  }
+
+  public notifyStreakUpdated(): void {
+    this.streakListeners.forEach((l) => {
+      try {
+        l();
+      } catch (err) {
+        console.error('Error in streak updated listener:', err);
       }
     });
   }
