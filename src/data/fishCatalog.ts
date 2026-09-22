@@ -53,10 +53,19 @@ export function getFishName(
   return fallback;
 }
 
+import {
+  getFishDataSourceConfig,
+  fetchFishFromSupabase,
+  applySupabaseFishData,
+} from '../services/supabaseFishService';
+
 /**
- * Asynchronously loads fish-names.json from public folder to keep catalog synchronized at runtime
+ * Asynchronously loads fish names based on .env configuration:
+ * - If VITE_FISH_DATA_SOURCE=supabase, attempts to fetch from Supabase table.
+ * - Otherwise (or on failure/offline), falls back to public/fish-names.json.
  */
 export async function loadFishNamesCatalog(): Promise<void> {
+  // 1. Always load base catalog from public/fish-names.json first
   try {
     const res = await fetch('./fish-names.json');
     if (res.ok) {
@@ -67,6 +76,37 @@ export async function loadFishNamesCatalog(): Promise<void> {
       }
     }
   } catch {
-    // Keep bundled catalog as reliable fallback
+    // Bundled catalog remains as fallback
+  }
+
+  // 2. Check environment configuration for Supabase
+  const config = getFishDataSourceConfig();
+  if (config.source === 'supabase') {
+    if (!config.supabaseUrl || !config.supabaseAnonKey) {
+      console.warn(
+        '[Aquascape] VITE_FISH_DATA_SOURCE=supabase aktif, namun VITE_SUPABASE_URL atau VITE_SUPABASE_ANON_KEY belum diisi di .env. Menggunakan nama dari fish-names.json.'
+      );
+      return;
+    }
+
+    try {
+      const rows = await fetchFishFromSupabase(
+        config.supabaseUrl,
+        config.supabaseAnonKey,
+        config.tableName
+      );
+
+      if (rows && rows.length > 0) {
+        const { appliedCount } = applySupabaseFishData(rows, FISH_CATALOG);
+        console.log(
+          `[Aquascape] Berhasil memuat ${appliedCount} nama ikan dari Supabase (${config.tableName}).`
+        );
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(
+        `[Aquascape] Gagal memuat nama ikan dari Supabase: ${message}. Menggunakan fallback lokal (fish-names.json).`
+      );
+    }
   }
 }
