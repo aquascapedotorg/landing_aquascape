@@ -101,25 +101,105 @@ export function getFishDataSourceConfig(): FishDataSourceConfig {
 }
 
 /**
- * Fetches fish rows from Supabase REST API without requiring external dependencies.
+ * Checks if a given timestamp or date string belongs to today (same calendar date).
+ * Supports ISO strings, YYYY-MM-DD date strings, timestamps, and Date objects.
+ */
+export function isDateToday(
+  dateInput?: string | Date | null,
+  referenceDate: Date = new Date()
+): boolean {
+  if (!dateInput) return false;
+
+  // Fast-path: If it's a simple 'YYYY-MM-DD' calendar date string
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) {
+    const todayStr = getTodayDateString(referenceDate);
+    return dateInput.trim() === todayStr;
+  }
+
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (isNaN(date.getTime())) return false;
+
+  // Check same local calendar date (matches the user's current day)
+  const isSameLocalDate =
+    date.getFullYear() === referenceDate.getFullYear() &&
+    date.getMonth() === referenceDate.getMonth() &&
+    date.getDate() === referenceDate.getDate();
+
+  if (isSameLocalDate) return true;
+
+  // Also check UTC calendar date (for databases storing in UTC)
+  const isSameUTCDate =
+    date.getUTCFullYear() === referenceDate.getUTCFullYear() &&
+    date.getUTCMonth() === referenceDate.getUTCMonth() &&
+    date.getUTCDate() === referenceDate.getUTCDate();
+
+  return isSameUTCDate;
+}
+
+/**
+ * Gets the ISO string for start of today (00:00:00.000 local time converted to ISO).
+ */
+export function getStartOfTodayISO(referenceDate: Date = new Date()): string {
+  const start = new Date(referenceDate);
+  start.setHours(0, 0, 0, 0);
+  return start.toISOString();
+}
+
+/**
+ * Gets today's calendar date string in YYYY-MM-DD format.
+ */
+export function getTodayDateString(referenceDate: Date = new Date()): string {
+  const y = referenceDate.getFullYear();
+  const m = String(referenceDate.getMonth() + 1).padStart(2, '0');
+  const d = String(referenceDate.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Fetches fish rows from Supabase REST API, filtered to load only names from the current day (today).
  */
 export async function fetchFishFromSupabase(
   url: string,
   anonKey: string,
-  tableName: string = 'communal_fishes'
+  tableName: string = 'communal_fishes',
+  referenceDate: Date = new Date()
 ): Promise<SupabaseFishRow[]> {
   const cleanUrl = url.replace(/\/+$/, '');
-  const endpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(tableName)}?select=*`;
+  const startOfToday = getStartOfTodayISO(referenceDate);
+  const todayDate = getTodayDateString(referenceDate);
 
-  const response = await fetch(endpoint, {
+  // Attempt 1: Query with PostgREST filter for created_at >= startOfToday or date = todayDate
+  const endpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(
+    tableName
+  )}?select=*&or=(created_at.gte.${encodeURIComponent(
+    startOfToday
+  )},date.eq.${encodeURIComponent(todayDate)})&order=created_at.desc`;
+
+  const headers = {
+    apikey: anonKey,
+    Authorization: `Bearer ${anonKey}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+
+  let response = await fetch(endpoint, {
     method: 'GET',
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
+    headers,
   });
+
+  // If complex filter failed (e.g. column 'date' does not exist in schema), fallback to simpler query
+  if (!response.ok) {
+    const simpleEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(
+      tableName
+    )}?select=*&created_at=gte.${encodeURIComponent(startOfToday)}&order=created_at.desc`;
+    response = await fetch(simpleEndpoint, { method: 'GET', headers });
+  }
+
+  // If still not ok (e.g. created_at column missing), query select=* and do client-side date filter
+  if (!response.ok) {
+    const fallbackEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(tableName)}?select=*`;
+    response = await fetch(fallbackEndpoint, { method: 'GET', headers });
+  }
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => '');
@@ -139,19 +219,37 @@ export async function fetchFishFromSupabase(
 /**
  * Applies fetched Supabase fish rows to the in-memory FISH_CATALOG.
  * Names are grouped by species (defaulting to 'neonTetra') and added to namePool.
+ * PER REQUIREMENT: Ensures only records matching today (current day) are applied!
  */
 export function applySupabaseFishData(
   rows: SupabaseFishRow[],
-  catalog: FishCatalogData
+  catalog: FishCatalogData,
+  options: { filterToday?: boolean; referenceDate?: Date } = { filterToday: true }
 ): { appliedCount: number; bySpecies: Record<FishSpeciesType, number> } {
   let appliedCount = 0;
   const bySpecies = {} as Record<FishSpeciesType, number>;
   VALID_FISH_SPECIES.forEach((s) => (bySpecies[s] = 0));
 
+  const filterToday = options.filterToday ?? true;
+  const referenceDate = options.referenceDate || new Date();
+
   for (const row of rows) {
     if (!row || typeof row.name !== 'string') continue;
     const cleanName = row.name.trim();
     if (!cleanName) continue;
+
+    // Filter by date: check created_at or date field against current day
+    if (filterToday) {
+      const rawDate =
+        row.created_at ||
+        (row as Record<string, unknown>).date ||
+        (row as Record<string, unknown>).tanggal;
+
+      // If a date field exists, verify it matches today
+      if (rawDate && !isDateToday(rawDate as string, referenceDate)) {
+        continue; // Skip records from yesterday or older days
+      }
+    }
 
     // Limit name length to 25 chars for neat aesthetic nametags
     const safeName = cleanName.slice(0, 25);

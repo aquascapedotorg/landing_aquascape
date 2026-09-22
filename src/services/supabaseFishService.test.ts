@@ -4,6 +4,9 @@ import {
   applySupabaseFishData,
   getFishDataSourceConfig,
   fetchFishFromSupabase,
+  isDateToday,
+  getStartOfTodayISO,
+  getTodayDateString,
   SupabaseFishRow,
 } from './supabaseFishService';
 import { FishCatalogData } from '../data/fishCatalog';
@@ -173,7 +176,7 @@ describe('Supabase Fish Service & Data Source Configuration', () => {
 
       expect(result).toEqual(mockData);
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://test.supabase.co/rest/v1/communal_fishes?select=*',
+        expect.stringContaining('https://test.supabase.co/rest/v1/communal_fishes?select=*'),
         expect.objectContaining({
           headers: expect.objectContaining({
             apikey: 'test-key',
@@ -194,6 +197,90 @@ describe('Supabase Fish Service & Data Source Configuration', () => {
       await expect(
         fetchFishFromSupabase('https://test.supabase.co', 'test-key', 'communal_fishes')
       ).rejects.toThrow(/Supabase API error \(404 Not Found\)/);
+    });
+  });
+
+  describe('isDateToday & Today Date Filtering (Current Day Requirement)', () => {
+    const fixedNow = new Date('2026-09-22T10:00:00Z');
+
+    it('should correctly identify dates belonging to today', () => {
+      expect(isDateToday(fixedNow, fixedNow)).toBe(true);
+      expect(isDateToday('2026-09-22T08:30:00Z', fixedNow)).toBe(true);
+      expect(isDateToday('2026-09-22', fixedNow)).toBe(true);
+    });
+
+    it('should return false for yesterday, tomorrow, or invalid dates', () => {
+      // 24 hours before fixedNow is definitely yesterday
+      const yesterday = new Date(fixedNow.getTime() - 24 * 3600 * 1000);
+      expect(isDateToday(yesterday, fixedNow)).toBe(false);
+      expect(isDateToday('2026-09-21', fixedNow)).toBe(false);
+      expect(isDateToday('2026-09-20T10:00:00Z', fixedNow)).toBe(false);
+
+      // 24 hours after fixedNow is definitely tomorrow
+      const tomorrow = new Date(fixedNow.getTime() + 24 * 3600 * 1000);
+      expect(isDateToday(tomorrow, fixedNow)).toBe(false);
+      expect(isDateToday('2026-09-23', fixedNow)).toBe(false);
+      expect(isDateToday('2026-09-24T10:00:00Z', fixedNow)).toBe(false);
+
+      expect(isDateToday('2026-08-22', fixedNow)).toBe(false);
+      expect(isDateToday(null, fixedNow)).toBe(false);
+      expect(isDateToday(undefined, fixedNow)).toBe(false);
+      expect(isDateToday('invalid-date', fixedNow)).toBe(false);
+    });
+
+    it('should filter out names from yesterday and only apply names from today', () => {
+      const mockCatalog: FishCatalogData = {
+        version: '1.0.0',
+        species: [
+          {
+            id: 'neonTetra',
+            name: 'Neon Tetra',
+            scientificName: 'Paracheirodon innesi',
+            category: 'Schooling',
+            description: 'Test',
+            defaultNames: ['BaseTetra'],
+          },
+          {
+            id: 'shark',
+            name: 'Shark',
+            scientificName: 'Carcharodon',
+            category: 'Apex',
+            description: 'Test',
+            defaultNames: ['BaseShark'],
+          },
+        ],
+        namePool: ['BaseTetra', 'BaseShark'],
+      };
+
+      const rows: SupabaseFishRow[] = [
+        // Yesterday's record (should be ignored)
+        { id: 1, name: 'OldNameYesterday', species: 'shark', created_at: '2026-09-21T15:00:00Z' },
+        // Today's records (should be loaded)
+        { id: 2, name: 'TodayShark', species: 'shark', created_at: '2026-09-22T09:15:00Z' },
+        { id: 3, name: 'TodayTetra', species: 'neonTetra', created_at: '2026-09-22T09:30:00Z' },
+      ];
+
+      const result = applySupabaseFishData(rows, mockCatalog, {
+        filterToday: true,
+        referenceDate: fixedNow,
+      });
+
+      expect(result.appliedCount).toBe(2);
+
+      const sharkDef = mockCatalog.species.find((s) => s.id === 'shark');
+      expect(sharkDef?.defaultNames).toContain('TodayShark');
+      expect(sharkDef?.defaultNames).not.toContain('OldNameYesterday');
+
+      const tetraDef = mockCatalog.species.find((s) => s.id === 'neonTetra');
+      expect(tetraDef?.defaultNames).toContain('TodayTetra');
+    });
+
+    it('should generate valid start of today ISO string and YYYY-MM-DD date string', () => {
+      const todayISO = getStartOfTodayISO(fixedNow);
+      expect(todayISO).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+
+      const dateStr = getTodayDateString(fixedNow);
+      expect(dateStr).toBe('2026-09-22');
     });
   });
 });
