@@ -1,61 +1,99 @@
 import { describe, it, expect } from 'vitest';
-import { computeLeaderboard, AttendanceRow, KuaciRow } from './streakCalculations';
+import {
+  computeLeaderboard,
+  isSkipDay,
+  AttendanceRow,
+  KuaciRow,
+} from './streakCalculations';
 
-const A = (name: string, d: string): AttendanceRow => ({ name, entry_date: d });
+const A = (name: string, d: string, created?: string): AttendanceRow => ({
+  name,
+  entry_date: d,
+  created_at: created,
+});
 const K = (name: string, d: string, n: number): KuaciRow => ({ name, entry_date: d, kuaci_count: n });
+const NO_HOLIDAYS = new Set<string>();
 
-describe('computeLeaderboard', () => {
-  it('counts consecutive days ending today as current streak', () => {
-    const att = [A('Budi', '2026-09-20'), A('Budi', '2026-09-21'), A('Budi', '2026-09-22')];
-    const [row] = computeLeaderboard(att, [], '2026-09-22');
-    expect(row.name).toBe('Budi');
-    expect(row.currentStreak).toBe(3);
-    expect(row.bestStreak).toBe(3);
+describe('isSkipDay', () => {
+  it('treats Saturday and Sunday as skip days', () => {
+    // 2026-02-14 is a Saturday, 2026-02-15 is a Sunday
+    expect(isSkipDay('2026-02-14', NO_HOLIDAYS)).toBe(true);
+    expect(isSkipDay('2026-02-15', NO_HOLIDAYS)).toBe(true);
+    // 2026-02-13 is a Friday (working day)
+    expect(isSkipDay('2026-02-13', NO_HOLIDAYS)).toBe(false);
   });
 
-  it('resets current streak to 1 after a one-day gap', () => {
-    // present 20,21,22, gap 23, present 24 -> today 24 -> current streak 1, best 3
-    const att = [
-      A('Budi', '2026-09-20'), A('Budi', '2026-09-21'), A('Budi', '2026-09-22'),
-      A('Budi', '2026-09-24'),
-    ];
-    const [row] = computeLeaderboard(att, [], '2026-09-24');
-    expect(row.currentStreak).toBe(1);
-    expect(row.bestStreak).toBe(3);
+  it('treats listed holidays as skip days', () => {
+    const holidays = new Set(['2026-05-01']); // a Friday holiday
+    expect(isSkipDay('2026-05-01', holidays)).toBe(true);
+    expect(isSkipDay('2026-05-01', NO_HOLIDAYS)).toBe(false);
   });
+});
 
-  it('keeps streak alive when today missing but yesterday present', () => {
-    const att = [A('Budi', '2026-09-20'), A('Budi', '2026-09-21')];
-    const [row] = computeLeaderboard(att, [], '2026-09-22'); // today 22, absent
+describe('computeLeaderboard with weekend/holiday skip', () => {
+  it('bridges a weekend: Friday then Monday = streak 2', () => {
+    // 2026-02-13 Fri, 2026-02-16 Mon (14/15 are Sat/Sun)
+    const att = [A('Budi', '2026-02-13'), A('Budi', '2026-02-16')];
+    const [row] = computeLeaderboard(att, [], '2026-02-16', NO_HOLIDAYS);
     expect(row.currentStreak).toBe(2);
   });
 
-  it('streak is 0 when neither today nor yesterday present', () => {
-    const att = [A('Budi', '2026-09-19'), A('Budi', '2026-09-20')];
-    const [row] = computeLeaderboard(att, [], '2026-09-22');
-    expect(row.currentStreak).toBe(0);
+  it('bridges a holiday in the middle without breaking', () => {
+    // 2026-04-30 Thu, 2026-05-01 Fri (holiday), 2026-05-04 Mon (2/3 May = Sat/Sun)
+    const holidays = new Set(['2026-05-01']);
+    const att = [A('Budi', '2026-04-30'), A('Budi', '2026-05-04')];
+    const [row] = computeLeaderboard(att, [], '2026-05-04', holidays);
+    expect(row.currentStreak).toBe(2); // Thu + Mon, Fri holiday + weekend bridged
   });
 
-  it('sums kuaci only for dates inside the current streak', () => {
-    const att = [A('Budi', '2026-09-21'), A('Budi', '2026-09-22')]; // streak = 21,22
-    const kuaci = [
-      K('Budi', '2026-09-20', 100), // outside streak -> ignored
-      K('Budi', '2026-09-21', 5),
-      K('Budi', '2026-09-22', 7),
-    ];
-    const [row] = computeLeaderboard(att, kuaci, '2026-09-22');
-    expect(row.kuaciInStreak).toBe(12);
+  it('breaks the streak when a working day is missed', () => {
+    // 2026-02-16 Mon present, 2026-02-17 Tue MISSING (working day), 2026-02-18 Wed present
+    const att = [A('Budi', '2026-02-16'), A('Budi', '2026-02-18')];
+    const [row] = computeLeaderboard(att, [], '2026-02-18', NO_HOLIDAYS);
+    expect(row.currentStreak).toBe(1); // Tue missed -> reset
   });
 
-  it('ranks by current streak desc, tie-break kuaci desc, and assigns 1-based rank', () => {
+  it('keeps streak alive when today is a weekend and last Friday was present', () => {
+    // today 2026-02-14 (Sat), last present 2026-02-13 (Fri)
+    const att = [A('Budi', '2026-02-12'), A('Budi', '2026-02-13')];
+    const [row] = computeLeaderboard(att, [], '2026-02-14', NO_HOLIDAYS);
+    expect(row.currentStreak).toBe(2); // Thu + Fri, today Sat skipped
+  });
+
+  it('sums kuaci only for attended working days in the streak', () => {
+    const att = [A('Budi', '2026-02-13'), A('Budi', '2026-02-16')];
+    const kuaci = [K('Budi', '2026-02-13', 4), K('Budi', '2026-02-16', 6), K('Budi', '2026-02-10', 99)];
+    const [row] = computeLeaderboard(att, kuaci, '2026-02-16', NO_HOLIDAYS);
+    expect(row.kuaciInStreak).toBe(10);
+  });
+});
+
+describe('computeLeaderboard tie-break by firstSeen', () => {
+  it('ranks equal streaks by earliest created_at, then name', () => {
     const att = [
-      A('Ali', '2026-09-22'), A('Ali', '2026-09-21'),   // streak 2
-      A('Budi', '2026-09-22'), A('Budi', '2026-09-21'), // streak 2
-      A('Cici', '2026-09-22'),                          // streak 1
+      A('Budi', '2026-02-16', '2026-02-16T09:00:00Z'),
+      A('Ali', '2026-02-16', '2026-02-16T08:00:00Z'), // joined earlier
+      A('Cici', '2026-02-16'), // no created_at
     ];
-    const kuaci = [K('Budi', '2026-09-22', 10), K('Ali', '2026-09-22', 3)];
-    const board = computeLeaderboard(att, kuaci, '2026-09-22');
-    expect(board.map((r) => r.name)).toEqual(['Budi', 'Ali', 'Cici']);
+    const board = computeLeaderboard(att, [], '2026-02-16', NO_HOLIDAYS);
+    // Ali (earliest) first, then Budi, then Cici (no created_at sorts last)
+    expect(board.map((r) => r.name)).toEqual(['Ali', 'Budi', 'Cici']);
     expect(board.map((r) => r.rank)).toEqual([1, 2, 3]);
+  });
+
+  it('is stable: same input yields the same order twice', () => {
+    const att = [
+      A('Budi', '2026-02-16', '2026-02-16T09:00:00Z'),
+      A('Ali', '2026-02-16', '2026-02-16T08:00:00Z'),
+    ];
+    const first = computeLeaderboard(att, [], '2026-02-16', NO_HOLIDAYS).map((r) => r.name);
+    const second = computeLeaderboard(att, [], '2026-02-16', NO_HOLIDAYS).map((r) => r.name);
+    expect(first).toEqual(second);
+  });
+
+  it('exposes firstSeen on each entry', () => {
+    const att = [A('Ali', '2026-02-16', '2026-02-16T08:00:00Z')];
+    const [row] = computeLeaderboard(att, [], '2026-02-16', NO_HOLIDAYS);
+    expect(row.firstSeen).toBe('2026-02-16T08:00:00Z');
   });
 });

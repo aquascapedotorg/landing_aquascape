@@ -42,7 +42,7 @@ async function refresh(): Promise<void> {
     const attendance = (attRes.data as AttendanceRow[] | null) || [];
     const kuaci = (kuaciRes.data as KuaciRow[] | null) || [];
 
-    leaderboard = computeLeaderboard(attendance, kuaci, today);
+    leaderboard = computeLeaderboard(attendance, kuaci, today, new Set<string>());
     rebuildRankIndex();
     aquascapeEvents.notifyStreakUpdated();
   } catch {

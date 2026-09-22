@@ -1,6 +1,7 @@
 export interface AttendanceRow {
   name: string;
   entry_date: string; // YYYY-MM-DD
+  created_at?: string; // ISO string, used for firstSeen tie-break
 }
 
 export interface KuaciRow {
@@ -14,6 +15,7 @@ export interface LeaderboardEntry {
   currentStreak: number;
   bestStreak: number;
   kuaciInStreak: number;
+  firstSeen: string; // MIN(created_at) or '' when unknown
   rank: number;
 }
 
@@ -24,27 +26,102 @@ export function toDateString(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function shiftDate(dateStr: string, deltaDays: number): string {
+function parseDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
+  return new Date(y, m - 1, d);
+}
+
+function shiftDate(dateStr: string, deltaDays: number): string {
+  const dt = parseDate(dateStr);
   dt.setDate(dt.getDate() + deltaDays);
   return toDateString(dt);
 }
 
+function isWeekend(dateStr: string): boolean {
+  const day = parseDate(dateStr).getDay(); // 0 = Sun, 6 = Sat
+  return day === 0 || day === 6;
+}
+
 /**
- * Longest run of consecutive calendar days present in the sorted-unique set.
+ * A skip day (weekend or holiday) bridges a streak: it never breaks it and
+ * never adds to the count.
  */
-function computeBestStreak(dates: string[]): number {
+export function isSkipDay(dateStr: string, holidays: Set<string>): boolean {
+  return isWeekend(dateStr) || holidays.has(dateStr);
+}
+
+/**
+ * Current streak counting back from `today`, skipping weekends/holidays.
+ * A missed WORKING day breaks the streak. Skip days bridge but don't count.
+ * Returns the streak length and the list of attended working days in it.
+ */
+function computeCurrentStreak(
+  dateSet: Set<string>,
+  today: string,
+  holidays: Set<string>
+): { streak: number; days: string[] } {
+  const days: string[] = [];
+  let cursor = today;
+
+  // Walk backwards day by day. We stop only when a WORKING day is unattended.
+  // Bound the walk to avoid infinite loops on pathological data.
+  for (let guard = 0; guard < 3660; guard++) {
+    if (isSkipDay(cursor, holidays)) {
+      // Skip days never break and never count; just step back.
+      cursor = shiftDate(cursor, -1);
+      continue;
+    }
+    // Working day:
+    if (dateSet.has(cursor)) {
+      days.push(cursor);
+      cursor = shiftDate(cursor, -1);
+    } else {
+      // Unattended working day breaks the streak.
+      break;
+    }
+  }
+
+  return { streak: days.length, days };
+}
+
+/**
+ * Longest run of attended working days where gaps are only skip days.
+ * Walk each attended date forward through skip days to the next working day.
+ */
+function computeBestStreak(dates: string[], holidays: Set<string>): number {
   if (dates.length === 0) return 0;
   const set = new Set(dates);
+
+  // Next working day strictly after dateStr.
+  const nextWorkingDay = (dateStr: string): string => {
+    let c = shiftDate(dateStr, 1);
+    let guard = 0;
+    while (isSkipDay(c, holidays) && guard < 3660) {
+      c = shiftDate(c, 1);
+      guard++;
+    }
+    return c;
+  };
+  // Previous working day strictly before dateStr.
+  const prevWorkingDay = (dateStr: string): string => {
+    let c = shiftDate(dateStr, -1);
+    let guard = 0;
+    while (isSkipDay(c, holidays) && guard < 3660) {
+      c = shiftDate(c, -1);
+      guard++;
+    }
+    return c;
+  };
+
   let best = 0;
   for (const d of dates) {
-    // Only start counting from a run's beginning (no previous day present).
-    if (set.has(shiftDate(d, -1))) continue;
+    if (isSkipDay(d, holidays)) continue; // only working days anchor runs
+    // Only start at a run head: previous working day not attended.
+    if (set.has(prevWorkingDay(d))) continue;
     let len = 1;
     let cursor = d;
-    while (set.has(shiftDate(cursor, 1))) {
-      cursor = shiftDate(cursor, 1);
+    while (set.has(nextWorkingDay(cursor))) {
+      cursor = nextWorkingDay(cursor);
       len++;
     }
     if (len > best) best = len;
@@ -52,37 +129,26 @@ function computeBestStreak(dates: string[]): number {
   return best;
 }
 
-/**
- * Current streak: consecutive days counting back from today if present,
- * else from yesterday if present, else 0.
- */
-function computeCurrentStreak(dateSet: Set<string>, today: string): { streak: number; days: string[] } {
-  let anchor: string | null = null;
-  if (dateSet.has(today)) anchor = today;
-  else if (dateSet.has(shiftDate(today, -1))) anchor = shiftDate(today, -1);
-
-  if (!anchor) return { streak: 0, days: [] };
-
-  const days: string[] = [];
-  let cursor = anchor;
-  while (dateSet.has(cursor)) {
-    days.push(cursor);
-    cursor = shiftDate(cursor, -1);
-  }
-  return { streak: days.length, days };
-}
-
 export function computeLeaderboard(
   attendance: AttendanceRow[],
   kuaci: KuaciRow[],
-  today: string
+  today: string,
+  holidays: Set<string>
 ): LeaderboardEntry[] {
-  // Group attendance dates per name (unique).
+  // Group attendance dates per name (unique) and track earliest created_at.
   const datesByName = new Map<string, Set<string>>();
+  const firstSeenByName = new Map<string, string>();
   for (const row of attendance) {
     if (!row || !row.name || !row.entry_date) continue;
     if (!datesByName.has(row.name)) datesByName.set(row.name, new Set());
     datesByName.get(row.name)!.add(row.entry_date);
+
+    if (row.created_at) {
+      const prev = firstSeenByName.get(row.name);
+      if (prev === undefined || row.created_at < prev) {
+        firstSeenByName.set(row.name, row.created_at);
+      }
+    }
   }
 
   // Kuaci lookup: name -> (date -> count)
@@ -96,8 +162,8 @@ export function computeLeaderboard(
   const entries: LeaderboardEntry[] = [];
   for (const [name, dateSet] of datesByName) {
     const sorted = [...dateSet].sort();
-    const { streak, days } = computeCurrentStreak(dateSet, today);
-    const bestStreak = Math.max(computeBestStreak(sorted), streak);
+    const { streak, days } = computeCurrentStreak(dateSet, today, holidays);
+    const bestStreak = Math.max(computeBestStreak(sorted, holidays), streak);
 
     let kuaciInStreak = 0;
     const kMap = kuaciByName.get(name);
@@ -105,13 +171,24 @@ export function computeLeaderboard(
       for (const d of days) kuaciInStreak += kMap.get(d) || 0;
     }
 
-    entries.push({ name, currentStreak: streak, bestStreak, kuaciInStreak, rank: 0 });
+    entries.push({
+      name,
+      currentStreak: streak,
+      bestStreak,
+      kuaciInStreak,
+      firstSeen: firstSeenByName.get(name) || '',
+      rank: 0,
+    });
   }
 
   entries.sort((a, b) => {
     if (b.currentStreak !== a.currentStreak) return b.currentStreak - a.currentStreak;
-    if (b.kuaciInStreak !== a.kuaciInStreak) return b.kuaciInStreak - a.kuaciInStreak;
-    if (b.bestStreak !== a.bestStreak) return b.bestStreak - a.bestStreak;
+    // firstSeen asc; empty firstSeen always sorts last.
+    if (a.firstSeen !== b.firstSeen) {
+      if (a.firstSeen === '') return 1;
+      if (b.firstSeen === '') return -1;
+      return a.firstSeen < b.firstSeen ? -1 : 1;
+    }
     return a.name.localeCompare(b.name);
   });
 
