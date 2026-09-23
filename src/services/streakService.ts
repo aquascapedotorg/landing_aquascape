@@ -54,7 +54,7 @@ async function refresh(): Promise<void> {
   const today = toDateString(new Date());
   try {
     const [attRes, kuaciRes] = await Promise.all([
-      client.from('communal_fishes').select('name,entry_date,created_at'),
+      client.from('communal_fishes').select('name,entry_date,created_at,species'),
       client.from('fish_daily_kuaci').select('name,entry_date,kuaci_count'),
     ]);
 
