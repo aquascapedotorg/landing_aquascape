@@ -61,17 +61,16 @@ export const Hero: React.FC<HeroProps> = ({
           <span>Open Source Organization & Engineering</span>
         </div>
 
-        {/* Brand Banner Heading: "Proyek dari [AQUASCAPE Banner]" */}
+        {/* Brand Banner Heading: "Dibangun oleh [AQUASCAPE Banner]" */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight mb-6 inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4 select-none">
-          <span className="text-slate-100 font-bold">Proyek dari</span>
+          <span className="text-slate-100 font-bold">Dibangun oleh</span>
           <AquascapeBanner height="1.18em" />
         </h1>
 
         {/* Tagline Description */}
         <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed mb-8 font-normal drop-shadow-sm">
-          Menghadirkan harmoni rekayasa perangkat lunak dengan filosofi keindahan alami{' '}
-          <span className="text-teal-300 font-medium">aquascape</span>. Jelajahi repositori,
-          arsitektur sistem, dan dokumentasi proyek kami di bawah ini.
+          Kumpulan proyek open-source yang kami kembangkan. Buka repositori mana pun
+          untuk membaca kode dan dokumentasinya.
         </p>
 
         {/* Interactive Aquascape Ecosystem Controls */}
