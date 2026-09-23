@@ -23,6 +23,7 @@ import {
 import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { normalizeName } from '../services/streakCalculations';
+import { ensureMascotSprite, getMascotSprite, getMascotAspect } from './mascotImage';
 import { recordKuaciEaten, getStreakFor } from '../services/streakService';
 import { CommunalFishInput } from './aquascapeEvents';
 import {
@@ -547,6 +548,9 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    // Start loading the logo-based mascot sprite (chroma-keyed, cropped).
+    ensureMascotSprite();
 
     let animationFrameId: number;
     let lastTime = performance.now();
@@ -1203,90 +1207,84 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         const tailWag = Math.sin(fish.tailPhase) * 0.28;
 
         if (fish.type === 'mascot') {
-          // --- AQUASCAPE MASCOT ORIGAMI FISH ---
-          const scale = fish.size / 65;
+          const sprite = getMascotSprite();
+          if (sprite) {
+            // --- LOGO SPRITE MASCOT (pixel-identical to the brand logo) ---
+            // Draw the chroma-keyed, cropped logo fish sized to the mascot, with
+            // a subtle tail-driven bob so it still feels alive. The sprite faces
+            // +X, so the outer horizontal flip already handles leftward swimming.
+            const targetH = fish.size * 1.6;
+            const targetW = targetH * getMascotAspect();
+            ctx.rotate(tailWag * 0.25); // gentle sway (path tail can't wag on a bitmap)
+            ctx.imageSmoothingEnabled = true;
+            ctx.drawImage(sprite, -targetW / 2, -targetH / 2, targetW, targetH);
+          } else {
+          // --- AQUASCAPE MASCOT ORIGAMI FISH (fallback until sprite loads) ---
+          // Faceted origami fish facing +X: a sharp diamond head with an eye, a
+          // two-facet gradient body, and a pointed V-notch tail. All edges are
+          // straight and pointed like folded paper — no rounded fins.
+          const scale = fish.size / 44;
           ctx.scale(scale, scale);
 
-          // Shadow / ambient underwater glow under mascot
-          ctx.fillStyle = 'rgba(56, 189, 176, 0.2)';
+          // Body top facet (lighter) — sharp diamond from mid-body to head base.
+          ctx.fillStyle = '#2f6d92';
           ctx.beginPath();
-          ctx.ellipse(0, 5, 40, 18, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Origami Head (pointing along positive X)
-          ctx.fillStyle = '#0c233c';
-          ctx.beginPath();
-          ctx.moveTo(35, 0); // nose tip
-          ctx.lineTo(15, -16);
-          ctx.lineTo(2, 0);
-          ctx.lineTo(15, 16);
+          ctx.moveTo(14, -14); // top, near head
+          ctx.lineTo(-14, 0);  // left mid (body/tail seam)
+          ctx.lineTo(14, 0);   // center-right seam
           ctx.closePath();
           ctx.fill();
 
-          // Mascot eye dot
-          ctx.fillStyle = '#ffffff';
+          // Body bottom facet (darker).
+          ctx.fillStyle = '#1c4a6b';
           ctx.beginPath();
-          ctx.arc(20, -3, 3, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Mid body facets
-          ctx.fillStyle = '#164367';
-          ctx.beginPath();
-          ctx.moveTo(15, -16);
-          ctx.lineTo(-4, -18);
-          ctx.lineTo(2, 0);
+          ctx.moveTo(14, 14);  // bottom, near head
+          ctx.lineTo(-14, 0);  // left mid
+          ctx.lineTo(14, 0);   // center-right seam
           ctx.closePath();
           ctx.fill();
 
-          ctx.fillStyle = '#1b4d75';
+          // Head — dark navy diamond with a sharp nose tip at the right.
+          ctx.fillStyle = '#0d2438';
           ctx.beginPath();
-          ctx.moveTo(15, 16);
-          ctx.lineTo(-4, 18);
-          ctx.lineTo(2, 0);
+          ctx.moveTo(38, 0);   // sharp nose tip
+          ctx.lineTo(14, -14); // top
+          ctx.lineTo(14, 14);  // bottom
           ctx.closePath();
           ctx.fill();
 
-          // Upper fin
-          ctx.fillStyle = '#1f5885';
+          // Eye — round navy socket with a bright cyan pupil (as in the logo).
+          ctx.fillStyle = '#0a1a2c';
           ctx.beginPath();
-          ctx.moveTo(-4, -18);
-          ctx.lineTo(-24, -20);
-          ctx.lineTo(-12, -8);
-          ctx.closePath();
+          ctx.arc(22, 0, 4.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#7fe4ef';
+          ctx.beginPath();
+          ctx.arc(22.5, -0.5, 1.8, 0, Math.PI * 2);
           ctx.fill();
 
-          // Lower fin
-          ctx.fillStyle = '#225c8a';
-          ctx.beginPath();
-          ctx.moveTo(-4, 18);
-          ctx.lineTo(-24, 20);
-          ctx.lineTo(-12, 8);
-          ctx.closePath();
-          ctx.fill();
-
-          // Central diamond facet
-          ctx.fillStyle = '#2b719f';
-          ctx.beginPath();
-          ctx.moveTo(2, 0);
-          ctx.lineTo(-14, -8);
-          ctx.lineTo(-24, 0);
-          ctx.lineTo(-14, 8);
-          ctx.closePath();
-          ctx.fill();
-
-          // Caudal / Tail fin with animated wag rotation
+          // Tail — pointed V notch made of two bright cyan triangles, wagging.
           ctx.save();
-          ctx.translate(-24, 0);
+          ctx.translate(-14, 0);
           ctx.rotate(tailWag);
-          ctx.fillStyle = '#44b4c2';
+          // upper tail blade
+          ctx.fillStyle = '#8fdff0';
           ctx.beginPath();
           ctx.moveTo(0, 0);
-          ctx.lineTo(-22, -15);
-          ctx.lineTo(-16, 0);
-          ctx.lineTo(-22, 15);
+          ctx.lineTo(-22, -16);
+          ctx.lineTo(-8, 0);
+          ctx.closePath();
+          ctx.fill();
+          // lower tail blade (slightly darker for the fold)
+          ctx.fillStyle = '#63c7dd';
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(-22, 16);
+          ctx.lineTo(-8, 0);
           ctx.closePath();
           ctx.fill();
           ctx.restore();
+          } // end sprite/path fallback
         } else if (fish.type === 'cherryShrimp') {
           // --- CHERRY SHRIMP ---
           ctx.fillStyle = '#ef4444';
