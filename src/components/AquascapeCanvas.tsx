@@ -1098,6 +1098,13 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           fish.vy = -Math.abs(fish.vy) * 0.7 - 0.2;
         }
 
+        // Hard-clamp position inside the canvas so no fish (especially bottom-
+        // crawling shrimp, or any fish spawned with a stale height) can drift
+        // below/outside the viewport and become invisible. Leave headroom at the
+        // bottom so the nametag drawn above the fish stays on-screen too.
+        fish.x = Math.min(Math.max(fish.x, marginX), w - marginX);
+        fish.y = Math.min(Math.max(fish.y, marginY), h - Math.max(marginY, fish.size + 22));
+
         // Compute swimming orientation (horizontal flip + pitch tilt)
         const { isFacingLeft, pitch } = getFishOrientation(fish.vx, fish.vy);
         fish.angle = isFacingLeft ? Math.PI - pitch : pitch;
