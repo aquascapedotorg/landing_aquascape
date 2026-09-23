@@ -43,19 +43,19 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
       {/* Panel */}
       <aside
         role="dialog"
-        aria-label="Papan peringkat streak"
+        aria-label="Streak Leaderboard"
         className="relative w-full max-w-sm h-full bg-[#0a121d] border-l border-teal-500/25 shadow-2xl flex flex-col animate-fade-in"
       >
         <header className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
           <div className="flex items-center gap-2 text-teal-300">
             <Trophy className="w-5 h-5 text-teal-400" />
-            <h2 className="text-sm font-bold tracking-wide">Papan Peringkat Streak</h2>
+            <h2 className="text-sm font-bold tracking-wide">Streak Leaderboard</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Tutup"
+            title="Close"
           >
             <X className="w-4 h-4" />
           </button>
@@ -64,7 +64,7 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
         <div className="flex-1 overflow-y-auto px-3 py-3">
           {entries.length === 0 ? (
             <div className="text-center text-slate-400 text-sm py-16 px-6">
-              Belum ada peserta hari ini. Ikan yang dikirim ke kolam akan muncul di sini.
+              No entries yet.
             </div>
           ) : (
             <ol className="space-y-1.5">
@@ -92,11 +92,11 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white truncate">{e.name}</p>
                       <p className="text-[11px] text-slate-400 font-mono">
-                        Rekor terpanjang: {e.bestStreak} hari
+                        Best Record: {e.bestStreak} days
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-teal-300">{e.currentStreak} hari</p>
+                      <p className="text-sm font-bold text-teal-300">{e.currentStreak} days</p>
                       <p className="text-[11px] text-slate-400 font-mono">{e.kuaciInStreak} kuaci</p>
                     </div>
                   </button>
