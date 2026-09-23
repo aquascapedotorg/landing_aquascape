@@ -1210,14 +1210,30 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           const sprite = getMascotSprite();
           if (sprite) {
             // --- LOGO SPRITE MASCOT (pixel-identical to the brand logo) ---
-            // Draw the chroma-keyed, cropped logo fish sized to the mascot, with
-            // a subtle tail-driven bob so it still feels alive. The sprite faces
-            // +X, so the outer horizontal flip already handles leftward swimming.
-            const targetH = fish.size * 1.6;
-            const targetW = targetH * getMascotAspect();
-            ctx.rotate(tailWag * 0.25); // gentle sway (path tail can't wag on a bitmap)
+            // The sprite is a static bitmap, so make it feel alive with layered
+            // procedural motion instead of a single stiff rotation:
+            //   - swim phase drives a gentle body wave and squash/stretch
+            //   - vertical velocity banks the fish so turns read naturally
+            // The sprite faces +X; the outer horizontal flip handles leftward swim.
+            const baseH = fish.size * 1.6;
+            const baseW = baseH * getMascotAspect();
+            const phase = fish.tailPhase;
+            // Bobbing: small vertical undulation as it swims.
+            const bob = Math.sin(phase) * (fish.size * 0.05);
+            // Banking: tilt toward the direction of vertical travel (clamped).
+            const bank = Math.max(-0.25, Math.min(0.25, fish.vy * 0.12));
+            // Swim wave: a soft roll synced to the stroke.
+            const roll = Math.sin(phase) * 0.06;
+            // Squash & stretch: stretch along X on the forward stroke, ease back.
+            const stretch = 1 + Math.sin(phase * 2) * 0.04;
+            const squash = 1 - Math.sin(phase * 2) * 0.04;
+
+            ctx.translate(0, bob);
+            ctx.rotate(bank + roll);
             ctx.imageSmoothingEnabled = true;
-            ctx.drawImage(sprite, -targetW / 2, -targetH / 2, targetW, targetH);
+            const drawW = baseW * stretch;
+            const drawH = baseH * squash;
+            ctx.drawImage(sprite, -drawW / 2, -drawH / 2, drawW, drawH);
           } else {
           // --- AQUASCAPE MASCOT ORIGAMI FISH (fallback until sprite loads) ---
           // Faceted origami fish facing +X: a sharp diamond head with an eye, a
