@@ -1001,8 +1001,11 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           const dy = (targetFood as FoodParticle).y - fish.y;
           const dist = Math.hypot(dx, dy);
 
-          fish.vx += (dx / dist) * 0.15;
-          fish.vy += (dy / dist) * 0.15;
+          // Shrimp normally sink, so they need a stronger pull to climb up and
+          // reach food anywhere in the tank.
+          const chase = fish.type === 'cherryShrimp' ? 0.28 : 0.15;
+          fish.vx += (dx / dist) * chase;
+          fish.vy += (dy / dist) * chase;
 
           // Eat food when close
           if (dist < fish.size * 0.6) {
@@ -1047,10 +1050,18 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
               }
             }
           } else if (fish.type === 'cherryShrimp') {
-            // Crawl gently along driftwood / bottom
-            fish.vx = Math.sin(timeSec * 0.8) * 0.4;
-            fish.vy = 0;
-            fish.y = Math.min(h - 36, Math.max(h - 110, fish.y));
+            // Crawl gently along the bottom, but SINK smoothly toward the floor
+            // instead of being hard-pinned there — so after chasing food up, the
+            // shrimp glides back down naturally rather than snapping to the bed.
+            fish.vx += Math.sin(timeSec * 0.8 + fish.id) * 0.06 + (Math.random() - 0.5) * 0.04;
+            const floorZone = h - 60; // preferred crawling band near the substrate
+            if (fish.y < floorZone) {
+              fish.vy += 0.05; // gentle, constant pull downward when above the floor
+            } else {
+              // Within the floor band: hover/creep with tiny vertical jitter.
+              fish.vy += (Math.random() - 0.5) * 0.04;
+              if (fish.y > h - 34) fish.vy -= 0.06; // don't burrow into the substrate
+            }
           } else if (fish.type === 'angelfish') {
             // Majestic slow glide in mid-upper column
             fish.vx += (Math.random() - 0.5) * 0.04;
@@ -1106,6 +1117,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         const speed = Math.hypot(fish.vx, fish.vy);
         let maxSpeed = 3.0;
         if (fish.type === 'whale') maxSpeed = 1.2;
+        else if (fish.type === 'cherryShrimp') maxSpeed = 2.0;
         else if (fish.type === 'mantaRay') maxSpeed = 1.5;
         else if (fish.type === 'angelfish') maxSpeed = 1.6;
         else if (fish.type === 'pufferfish') maxSpeed = 1.8;
