@@ -5,7 +5,7 @@ import { FishCustomizerModal } from './FishCustomizerModal';
 import { StreakLeaderboardDrawer } from './StreakLeaderboardDrawer';
 import { AquascapeSettings } from '../types';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
-import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy } from 'lucide-react';
+import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff } from 'lucide-react';
 
 interface Telemetry {
   temperature: string;
@@ -64,6 +64,13 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
   const supabaseMode = isSupabaseModeActive();
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
+  // Clean mode: hide all Zen UI (header, telemetry HUD, buttons, controls, tips)
+  // AND the fish nametags, leaving only the aquarium for a distraction-free view.
+  const [cleanMode, setCleanMode] = useState(false);
+  // When clean, force nametags off on the canvas without mutating the user's own
+  // setting, so exiting clean mode restores their previous nametag preference.
+  const canvasSettings = cleanMode ? { ...settings, showNametags: false } : settings;
+
   // Live biotope telemetry: base values follow the aquarium controls (lighting
   // warms/cools the water; the CO2 diffuser raises CO2 and lowers pH), with a
   // small random fluctuation on top so the sensors read like they are alive.
@@ -82,6 +89,8 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
           setIsLeaderboardOpen(false);
         } else if (isFaunaModalOpen) {
           setIsFaunaModalOpen(false);
+        } else if (cleanMode) {
+          setCleanMode(false); // ESC first restores the UI, a second ESC closes Zen
         } else {
           onClose();
         }
@@ -95,7 +104,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose, isFaunaModalOpen, isLeaderboardOpen]);
+  }, [isOpen, onClose, isFaunaModalOpen, isLeaderboardOpen, cleanMode]);
 
   if (!isOpen) return null;
 
@@ -104,13 +113,30 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
       {/* 1. Fullscreen Living Aquascape Simulation Canvas */}
       <div className="relative flex-1 w-full h-full">
         <AquascapeCanvas
-          settings={settings}
+          settings={canvasSettings}
           className="w-full h-full"
           isHeroOnly={false}
           onRegenerate={onRegenerate}
         />
 
+        {/* Clean-mode toggle: always visible so the user can restore the UI.
+            Sits at the top-right; dim by default, clearer on hover. */}
+        <button
+          type="button"
+          onClick={() => setCleanMode((v) => !v)}
+          className={`absolute top-4 right-4 z-40 flex items-center justify-center w-9 h-9 rounded-xl border backdrop-blur-md transition-all active:scale-95 cursor-pointer ${
+            cleanMode
+              ? 'bg-black/30 border-white/10 text-white/40 hover:text-white hover:bg-black/50'
+              : 'bg-slate-900/80 border-teal-500/30 text-teal-300 hover:bg-slate-800'
+          }`}
+          title={cleanMode ? 'Tampilkan antarmuka' : 'Mode bersih (sembunyikan antarmuka)'}
+          aria-label={cleanMode ? 'Tampilkan antarmuka' : 'Mode bersih'}
+        >
+          {cleanMode ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+        </button>
+
         {/* Top Header Bar */}
+        {!cleanMode && (
         <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 flex items-center justify-between pointer-events-none z-30">
           <div className="flex items-center gap-3 pointer-events-auto bg-black/40 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-teal-500/20">
             <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
@@ -191,8 +217,10 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
             </button>
           </div>
         </div>
+        )}
 
         {/* Floating Bottom Aquascape Controls */}
+        {!cleanMode && (
         <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-2 pointer-events-none z-30 px-4">
           <div className="pointer-events-auto">
             <AquascapeControls
@@ -206,6 +234,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
             <span>Klik di mana saja pada aquarium untuk menyebarkan kuaci & menciptakan riak air alami</span>
           </p>
         </div>
+        )}
       </div>
 
       {/* Fauna & Fish Customizer Modal (never shown in Supabase mode) */}
