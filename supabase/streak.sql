@@ -29,17 +29,30 @@ drop policy if exists "Allow public insert access" on public.fish_daily_kuaci;
 drop policy if exists "Allow public update access" on public.fish_daily_kuaci;
 
 -- Atomic increment: avoids lost updates when multiple visitors feed the same fish.
+-- SECURITY: p_amount is clamped to a small per-call range so a direct anon call
+-- (e.g. curl with p_amount=100000) cannot balloon a fish's kuaci. The app only
+-- ever sends small batched amounts. Also validates the name (1-100 chars) so the
+-- RPC cannot be used to seed junk rows that bypass the table's insert policy.
 create or replace function public.increment_kuaci(p_name text, p_amount int)
 returns void
 language plpgsql
 security definer
 as $$
+declare
+  v_name text := btrim(regexp_replace(coalesce(p_name, ''), '\s+', ' ', 'g'));
+  v_amount int := least(greatest(coalesce(p_amount, 0), 0), 100); -- clamp 0..100
 begin
+  if char_length(v_name) < 1 or char_length(v_name) > 100 then
+    return; -- reject junk names silently
+  end if;
+  if v_amount = 0 then
+    return; -- nothing to add
+  end if;
   insert into public.fish_daily_kuaci (name, entry_date, kuaci_count, updated_at)
-  values (p_name, current_date, greatest(p_amount, 0), now())
+  values (v_name, current_date, v_amount, now())
   on conflict (name, entry_date)
   do update set
-    kuaci_count = public.fish_daily_kuaci.kuaci_count + greatest(excluded.kuaci_count, 0),
+    kuaci_count = public.fish_daily_kuaci.kuaci_count + v_amount,
     updated_at = now();
 end;
 $$;

@@ -34,14 +34,20 @@ create policy "Allow public read access"
   for select
   using (true);
 
--- Izinkan webhook / aplikasi luar (Anon Key / Service Key) menambahkan nama ikan baru
--- Validasi: nama wajib 1-100 karakter (setelah trim). Hanya INSERT yang dibuka;
--- tidak ada UPDATE/DELETE publik, jadi anon tidak bisa mengubah/menghapus data.
+-- Izinkan webhook / aplikasi luar (Anon Key) menambahkan nama ikan baru, dengan
+-- validasi ketat:
+--   1. nama wajib 1-100 karakter (setelah trim) -> tolak sampah/kepanjangan
+--   2. entry_date WAJIB = hari ini (current_date) -> cegah pemalsuan riwayat
+--      kehadiran (back-date) yang bisa mencurangi streak.
+-- Hanya INSERT yang dibuka; tidak ada UPDATE/DELETE publik.
 drop policy if exists "Allow public insert access" on public.communal_fishes;
 create policy "Allow public insert access"
   on public.communal_fishes
   for insert
-  with check (char_length(btrim(name)) between 1 and 100);
+  with check (
+    char_length(btrim(name)) between 1 and 100
+    and entry_date = current_date
+  );
 
 -- 4. Aktifkan Supabase Realtime untuk tabel ini (Live WebSocket spawn di browser)
 alter publication supabase_realtime add table public.communal_fishes;
