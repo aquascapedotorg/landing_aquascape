@@ -1,6 +1,7 @@
 import { FishParticle, FishSpeciesType } from '../types';
 import { getFishName } from '../data/fishCatalog';
 import { getHungerStatus } from './lifeCycleHelper';
+import { isSupabaseModeActive } from '../services/supabaseFishService';
 
 /**
  * Creates an ecosystem school of fish with unique names from the catalog.
@@ -1617,9 +1618,14 @@ export function drawFishNametag(
         ? 'Buntal'
         : 'Tetra';
 
-    const hungerInfo = getHungerStatus(fish.hunger);
     const stageLabel = fish.stage === 'baby' ? 'Bayi' : fish.stage === 'juvenile' ? 'Remaja' : fish.stage === 'elderly' ? 'Tua' : 'Dewasa';
-    const subText = `${speciesLabel} (${stageLabel}) • ${fish.eatenCount || 0} kuaci • Lapar: ${hungerInfo.percentage}% (${hungerInfo.label})`;
+    // Hunger is a life-cycle stat; it's meaningless in Supabase mode (life cycle
+    // is off there), so only show it in local mode.
+    let subText = `${speciesLabel} (${stageLabel}) • ${fish.eatenCount || 0} kuaci`;
+    if (!isSupabaseModeActive()) {
+      const hungerInfo = getHungerStatus(fish.hunger);
+      subText += ` • Lapar: ${hungerInfo.percentage}% (${hungerInfo.label})`;
+    }
 
     ctx.font = '9px sans-serif';
     const subWidth = ctx.measureText(subText).width + 14;

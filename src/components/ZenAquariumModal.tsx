@@ -4,9 +4,41 @@ import { AquascapeControls } from './AquascapeControls';
 import { FishCustomizerModal } from './FishCustomizerModal';
 import { StreakLeaderboardDrawer } from './StreakLeaderboardDrawer';
 import { AquascapeSettings } from '../types';
-import { ZEN_CONFIG } from '../data/zenConfig';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy } from 'lucide-react';
+
+interface Telemetry {
+  temperature: string;
+  ph: string;
+  co2: string;
+}
+
+/**
+ * Derives live-looking biotope readings from the current settings:
+ * - temperature tracks lighting (daylight warmest, moonlight coolest)
+ * - CO2 is high when the diffuser is on, low when off
+ * - pH drops as dissolved CO2 rises (carbonic acid), so it's lower when CO2 is on
+ * Each reading gets a small random fluctuation so the HUD reads like a sensor.
+ */
+function computeTelemetry(settings: AquascapeSettings): Telemetry {
+  const jitter = (spread: number) => (Math.random() - 0.5) * 2 * spread;
+
+  const baseTemp =
+    settings.lighting === 'daylight' ? 25.2 : settings.lighting === 'moonlight' ? 24.2 : 24.8;
+  const temp = baseTemp + jitter(0.3);
+
+  const baseCo2 = settings.co2Active ? 28 : 12;
+  const co2 = Math.max(0, Math.round(baseCo2 + jitter(3)));
+
+  const basePh = settings.co2Active ? 6.5 : 6.9;
+  const ph = basePh + jitter(0.1);
+
+  return {
+    temperature: `${temp.toFixed(1)}°C`,
+    ph: `pH ${ph.toFixed(1)}`,
+    co2: `CO2 ~${co2}ppm`,
+  };
+}
 
 interface ZenProps {
   isOpen: boolean;
@@ -31,6 +63,17 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
   // fauna customization (species/density/naming) does not apply — hide it.
   const supabaseMode = isSupabaseModeActive();
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+
+  // Live biotope telemetry: base values follow the aquarium controls (lighting
+  // warms/cools the water; the CO2 diffuser raises CO2 and lowers pH), with a
+  // small random fluctuation on top so the sensors read like they are alive.
+  const [telemetry, setTelemetry] = useState(() => computeTelemetry(settings));
+  useEffect(() => {
+    if (!isOpen) return;
+    setTelemetry(computeTelemetry(settings)); // snap to new base on setting change
+    const id = setInterval(() => setTelemetry(computeTelemetry(settings)), 3000);
+    return () => clearInterval(id);
+  }, [isOpen, settings.lighting, settings.co2Active]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,19 +126,20 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
           <div className="hidden md:flex items-center gap-4 px-4 py-1.5 rounded-2xl bg-black/40 backdrop-blur-md border border-teal-500/20 text-xs font-mono text-cyan-200/90 pointer-events-auto">
             <div className="flex items-center gap-1">
               <Thermometer className="w-3.5 h-3.5 text-teal-400" />
-              <span>{ZEN_CONFIG.telemetry.temperature}</span>
+              <span>{telemetry.temperature}</span>
             </div>
             <span>•</span>
             <div className="flex items-center gap-1">
               <Droplets className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{ZEN_CONFIG.telemetry.ph}</span>
+              <span>{telemetry.ph}</span>
             </div>
             <span>•</span>
             <div className="flex items-center gap-1">
               <Activity className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{ZEN_CONFIG.telemetry.co2}</span>
+              <span>{telemetry.co2}</span>
             </div>
-            {settings.enableLifeCycle !== false && (
+            {/* Regenerasi only makes sense with the life cycle on (local mode). */}
+            {!supabaseMode && settings.enableLifeCycle !== false && (
               <>
                 <span>•</span>
                 <div className="flex items-center gap-1 text-teal-300">
