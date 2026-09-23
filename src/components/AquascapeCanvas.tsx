@@ -1136,7 +1136,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         fish.tailPhase += fish.tailSpeed * (0.8 + speed * 0.8);
 
         // Highlight glow (hover) / spotlight (click, time-decayed) drawn behind fish.
-        const isFocus = fish.highlightUntil !== undefined && fish.highlightUntil > currentTime;
+        const isFocus = fish.highlightUntil !== undefined && fish.highlightUntil > Date.now();
         const isHighlight = fish.hovered === true || isFocus;
         if (isHighlight) {
           const glowR = Math.max(26, fish.size * 1.4);
