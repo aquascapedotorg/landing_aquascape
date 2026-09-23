@@ -57,6 +57,16 @@ Organisasi GitHub **AQUASCAPE** mengelola repositori publik (open-source) dan in
   - Modal pembaca dokumen `README.md` terintegrasi menggunakan parser *GitHub Flavored Markdown* (GFM).
   - Tampilan metadata: tanggal pembaruan terakhir, link ke repositori GitHub, dan navigasi keyboard (`Esc`).
 
+- **Ikan Komunal dari Supabase (Realtime)**
+  - Sumber data ikan dapat dialihkan antara file lokal (`public/fish-names.json`) dan Supabase melalui variabel `.env` (`VITE_FISH_DATA_SOURCE`).
+  - Dalam mode Supabase, kanvas menampilkan semua ikan yang dikirim hari ini (plus satu maskot) dan menerima ikan baru secara **realtime tanpa refresh** (WebSocket + polling fallback).
+  - Ikan baru ditambahkan lewat webhook (POST langsung ke tabel Supabase). Lihat [`docs/WEBHOOK.md`](docs/WEBHOOK.md) untuk endpoint, daftar spesies, dan format respons.
+
+- **Streak, Kuaci & Papan Peringkat**
+  - Streak kehadiran per peserta dihitung dari riwayat kehadiran; **weekend & hari libur nasional** ([`public/holidays.txt`](public/holidays.txt)) menjembatani streak tanpa memutus.
+  - Akumulasi kuaci harian per ikan dan snapshot streak disimpan di Supabase.
+  - Panel papan peringkat (Zen mode) menampilkan ikon spesies tiap peserta; klik/hover sebuah baris menyorot ikannya di kanvas.
+
 ---
 
 ## Arsitektur & Alur Kerja
@@ -145,6 +155,25 @@ Agar workflow otomatis dapat membaca repositori organisasi (termasuk yang bersta
 
 ---
 
+## Konfigurasi Supabase (Opsional)
+
+Fitur ikan komunal, streak, dan papan peringkat memakai Supabase. Jika tidak diaktifkan, aplikasi memakai nama ikan lokal dari `public/fish-names.json`.
+
+1. Salin `.env.example` menjadi `.env` dan isi kredensial:
+   ```env
+   VITE_FISH_DATA_SOURCE=supabase
+   VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+   VITE_SUPABASE_ANON_KEY=<anon-public-key>
+   VITE_SUPABASE_FISH_TABLE=communal_fishes
+   ```
+   Variabel `VITE_*` juga perlu diset sebagai **environment variable** pada workflow build (GitHub Pages) agar ter-*bake* ke bundle.
+2. Jalankan skrip SQL di **Supabase Dashboard → SQL Editor** (sekali saja, aman dijalankan ulang):
+   - [`supabase/schema.sql`](supabase/schema.sql) — tabel `communal_fishes` + RLS + Realtime.
+   - [`supabase/streak.sql`](supabase/streak.sql) — tabel `fish_daily_kuaci` & `fish_streaks` + RPC.
+3. Keamanan: `anon key` memang publik; yang melindungi data adalah **RLS**. Policy dibatasi ke *read* publik + *insert* tervalidasi (nama 1–100 karakter, `entry_date` = hari ini); penulisan kuaci/streak hanya lewat RPC `SECURITY DEFINER`. Detail webhook & respons di [`docs/WEBHOOK.md`](docs/WEBHOOK.md).
+
+---
+
 ## Struktur Direktori
 
 ```text
@@ -155,24 +184,45 @@ landing_aquascape/
 ├── public/
 │   ├── static/                  # Asset grafis resmi yang disalin saat build
 │   ├── logo.svg                 # Maskot SVG
+│   ├── fish-names.json          # Katalog spesies & nama ikan lokal (fallback)
+│   ├── holidays.txt             # Daftar hari libur nasional (skip streak)
+│   ├── zen-config.json          # Preset & default konfigurasi Zen mode
 │   └── repos.json               # Salinan data repositori publik
 ├── src/
 │   ├── components/
-│   │   ├── AquascapeAudio.ts    # Web Audio API ambient sound generator
-│   │   ├── AquascapeCanvas.tsx  # Simulasi kanvas akuarium interaktif 60 FPS
-│   │   ├── AquascapeControls.tsx# Panel kontrol pencahayaan & interaksi
-│   │   ├── AquascapeLogo.tsx    # Komponen logo & banner resmi AQUASCAPE
-│   │   ├── Header.tsx           # Navigasi atas, kontrol audio & mode zen
-│   │   ├── Hero.tsx             # Section hero dengan banner & living tank
-│   │   ├── ProjectCard.tsx      # Komponen kartu proyek & tag repositori
-│   │   ├── ReadmeModal.tsx      # Modal pembaca Markdown dokumentasi
-│   │   └── ZenAquariumModal.tsx # Tampilan akuarium layar penuh
+│   │   ├── AquascapeAudio.ts        # Web Audio API ambient sound generator
+│   │   ├── AquascapeCanvas.tsx      # Simulasi kanvas akuarium interaktif 60 FPS
+│   │   ├── AquascapeControls.tsx    # Panel kontrol pencahayaan & interaksi
+│   │   ├── AquascapeLogo.tsx        # Komponen logo & banner resmi AQUASCAPE
+│   │   ├── FishCustomizerModal.tsx  # Modal atur jenis/kepadatan ikan (mode lokal)
+│   │   ├── FishSpeciesIcon.tsx      # Ikon SVG kepala ikan per spesies
+│   │   ├── Header.tsx               # Navigasi atas, kontrol audio & mode zen
+│   │   ├── Hero.tsx                 # Section hero dengan banner & living tank
+│   │   ├── ProjectCard.tsx          # Komponen kartu proyek & tag repositori
+│   │   ├── ReadmeModal.tsx          # Modal pembaca Markdown dokumentasi
+│   │   ├── StreakLeaderboardDrawer.tsx # Panel papan peringkat streak (Zen)
+│   │   ├── ZenAquariumModal.tsx     # Tampilan akuarium layar penuh + telemetry
+│   │   ├── aquascapeEvents.ts       # Event bus kanvas (spawn, highlight, dsb.)
+│   │   ├── fishRenderer.ts          # Fungsi gambar ikan & nametag di kanvas
+│   │   └── lifeCycleHelper.ts       # Logika siklus hidup & rasa lapar ikan
 │   ├── data/
-│   │   └── reposData.ts         # Data cadangan (fallback) awal repositori
+│   │   ├── fishCatalog.ts       # Loader katalog ikan (lokal/Supabase)
+│   │   ├── reposData.ts         # Data cadangan (fallback) awal repositori
+│   │   └── zenConfig.ts         # Loader konfigurasi Zen mode
+│   ├── services/
+│   │   ├── supabaseFishService.ts   # Fetch/realtime ikan komunal + mode source
+│   │   ├── streakCalculations.ts    # Perhitungan streak & papan peringkat (murni)
+│   │   └── streakService.ts         # Orkestrasi streak: fetch, buffer, snapshot
 │   ├── App.tsx                  # Komponen utama & state management
 │   ├── main.tsx                 # Entrypoint React DOM
 │   ├── index.css                # Konfigurasi Tailwind CSS v4 & custom style
 │   └── types.ts                 # Definisi tipe TypeScript
+├── supabase/
+│   ├── schema.sql               # Skema tabel communal_fishes + RLS + Realtime
+│   ├── streak.sql               # Tabel kuaci & streak + RPC SECURITY DEFINER
+│   └── cleanup-names.sql        # Utilitas merapikan nama (spasi/typo)
+├── docs/
+│   └── WEBHOOK.md               # Dokumentasi webhook penambahan ikan
 ├── static/                      # File master grafis resmi (logo transparan, banner)
 ├── generate-data.js             # Script ekstraksi metadata & README via GitHub API
 ├── repos.json                   # Cache data repositori lokal
