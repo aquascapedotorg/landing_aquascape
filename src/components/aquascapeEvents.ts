@@ -13,6 +13,8 @@ export interface AquascapeCanvasProvider {
   renameFish?: (id: number, newName: string) => void;
   syncCommunalFish?: (fishes: CommunalFishInput[]) => void;
   spawnFish?: (species: FishSpeciesType, name?: string) => FishParticle | undefined;
+  highlightFish?: (name: string, opts: { hover?: boolean; focus?: boolean }) => void;
+  clearFishHighlight?: (name?: string) => void;
 }
 
 class AquascapeEventManager {
@@ -142,6 +144,30 @@ class AquascapeEventManager {
       }
     });
     return result;
+  }
+
+  public highlightFish(name: string, opts: { hover?: boolean; focus?: boolean }): void {
+    this.providers.forEach((p) => {
+      if (p.provider.highlightFish) {
+        try {
+          p.provider.highlightFish(name, opts);
+        } catch (err) {
+          console.error('Error highlighting fish on provider:', err);
+        }
+      }
+    });
+  }
+
+  public clearFishHighlight(name?: string): void {
+    this.providers.forEach((p) => {
+      if (p.provider.clearFishHighlight) {
+        try {
+          p.provider.clearFishHighlight(name);
+        } catch (err) {
+          console.error('Error clearing fish highlight on provider:', err);
+        }
+      }
+    });
   }
 
   public onCatalogLoaded(listener: () => void): () => void {

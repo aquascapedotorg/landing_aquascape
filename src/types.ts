@@ -74,6 +74,8 @@ export interface FishParticle {
   fadeOpacity?: number;
   isCommunal?: boolean;
   communalId?: string | number;
+  hovered?: boolean;
+  highlightUntil?: number;
 }
 
 export interface BubbleParticle {
