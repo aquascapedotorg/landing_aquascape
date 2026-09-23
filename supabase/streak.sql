@@ -16,18 +16,17 @@ create index if not exists idx_fish_daily_kuaci_entry_date
 
 alter table public.fish_daily_kuaci enable row level security;
 
+-- SECURITY: only PUBLIC READ is granted to anon. Writes happen exclusively via
+-- the increment_kuaci() RPC below (SECURITY DEFINER, which bypasses RLS), so
+-- anon cannot INSERT/UPDATE this table directly and cannot forge kuaci counts.
 -- Drop-then-create so this script is safe to re-run (create policy has no IF NOT EXISTS).
 drop policy if exists "Allow public read access" on public.fish_daily_kuaci;
 create policy "Allow public read access"
   on public.fish_daily_kuaci for select using (true);
 
+-- Explicitly remove any previously-granted public write policies (hardening).
 drop policy if exists "Allow public insert access" on public.fish_daily_kuaci;
-create policy "Allow public insert access"
-  on public.fish_daily_kuaci for insert with check (true);
-
 drop policy if exists "Allow public update access" on public.fish_daily_kuaci;
-create policy "Allow public update access"
-  on public.fish_daily_kuaci for update using (true) with check (true);
 
 -- Atomic increment: avoids lost updates when multiple visitors feed the same fish.
 create or replace function public.increment_kuaci(p_name text, p_amount int)
@@ -73,15 +72,15 @@ create table if not exists public.fish_streaks (
 
 alter table public.fish_streaks enable row level security;
 
+-- SECURITY: public READ only. Writes happen exclusively via upsert_streaks()
+-- (SECURITY DEFINER), so anon cannot INSERT/UPDATE snapshots directly and cannot
+-- forge streak/best_streak values.
 drop policy if exists "Allow public read access" on public.fish_streaks;
 create policy "Allow public read access"
   on public.fish_streaks for select using (true);
+-- Remove any previously-granted public write policies (hardening).
 drop policy if exists "Allow public insert access" on public.fish_streaks;
-create policy "Allow public insert access"
-  on public.fish_streaks for insert with check (true);
 drop policy if exists "Allow public update access" on public.fish_streaks;
-create policy "Allow public update access"
-  on public.fish_streaks for update using (true) with check (true);
 
 -- Batch upsert of streak snapshots. best_streak never decreases (GREATEST).
 create or replace function public.upsert_streaks(p_rows jsonb)

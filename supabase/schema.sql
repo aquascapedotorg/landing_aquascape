@@ -35,10 +35,13 @@ create policy "Allow public read access"
   using (true);
 
 -- Izinkan webhook / aplikasi luar (Anon Key / Service Key) menambahkan nama ikan baru
+-- Validasi: nama wajib 1-100 karakter (setelah trim). Hanya INSERT yang dibuka;
+-- tidak ada UPDATE/DELETE publik, jadi anon tidak bisa mengubah/menghapus data.
+drop policy if exists "Allow public insert access" on public.communal_fishes;
 create policy "Allow public insert access"
   on public.communal_fishes
   for insert
-  with check (true);
+  with check (char_length(btrim(name)) between 1 and 100);
 
 -- 4. Aktifkan Supabase Realtime untuk tabel ini (Live WebSocket spawn di browser)
 alter publication supabase_realtime add table public.communal_fishes;
