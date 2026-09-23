@@ -77,13 +77,14 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
                     onClick={() => {
                       aquascapeEvents.highlightFish(e.name, { focus: true });
                       setSelectedName(e.name);
+                      onClose();
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-900/60 border text-left transition-colors cursor-pointer hover:bg-slate-800/70 ${
                       selectedName === e.name
                         ? 'border-teal-400 ring-1 ring-teal-400/60'
                         : 'border-slate-800 hover:border-teal-500/40'
                     }`}
-                    title="Sorot ikan ini di akuarium"
+                    title="Highlight fish in aquascape"
                   >
                     <span className="w-7 shrink-0 flex items-center justify-center font-mono text-sm text-slate-300">
                       {e.rank <= 3 ? <Crown className={`w-4 h-4 ${crownColor(e.rank)}`} /> : e.rank}
