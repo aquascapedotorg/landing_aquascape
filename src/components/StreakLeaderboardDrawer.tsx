@@ -3,6 +3,7 @@ import { X, Trophy, Crown } from 'lucide-react';
 import { getLeaderboard } from '../services/streakService';
 import { LeaderboardEntry } from '../services/streakCalculations';
 import { aquascapeEvents } from './aquascapeEvents';
+import { FishSpeciesIcon } from './FishSpeciesIcon';
 
 interface DrawerProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface DrawerProps {
 
 export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [selectedName, setSelectedName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -18,7 +20,10 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
     const unsubscribe = aquascapeEvents.onStreakUpdated(() => {
       setEntries([...getLeaderboard()]);
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      aquascapeEvents.clearFishHighlight();
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -64,23 +69,37 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
           ) : (
             <ol className="space-y-1.5">
               {entries.map((e) => (
-                <li
-                  key={e.name}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800"
-                >
-                  <span className="w-7 shrink-0 flex items-center justify-center font-mono text-sm text-slate-300">
-                    {e.rank <= 3 ? <Crown className={`w-4 h-4 ${crownColor(e.rank)}`} /> : e.rank}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{e.name}</p>
-                    <p className="text-[11px] text-slate-400 font-mono">
-                      Rekor terpanjang: {e.bestStreak} hari
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-teal-300">{e.currentStreak} hari</p>
-                    <p className="text-[11px] text-slate-400 font-mono">{e.kuaciInStreak} kuaci</p>
-                  </div>
+                <li key={e.name}>
+                  <button
+                    type="button"
+                    onMouseEnter={() => aquascapeEvents.highlightFish(e.name, { hover: true })}
+                    onMouseLeave={() => aquascapeEvents.clearFishHighlight(e.name)}
+                    onClick={() => {
+                      aquascapeEvents.highlightFish(e.name, { focus: true });
+                      setSelectedName(e.name);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-900/60 border text-left transition-colors cursor-pointer hover:bg-slate-800/70 ${
+                      selectedName === e.name
+                        ? 'border-teal-400 ring-1 ring-teal-400/60'
+                        : 'border-slate-800 hover:border-teal-500/40'
+                    }`}
+                    title="Sorot ikan ini di akuarium"
+                  >
+                    <span className="w-7 shrink-0 flex items-center justify-center font-mono text-sm text-slate-300">
+                      {e.rank <= 3 ? <Crown className={`w-4 h-4 ${crownColor(e.rank)}`} /> : e.rank}
+                    </span>
+                    <FishSpeciesIcon species={e.species} size={24} className="shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{e.name}</p>
+                      <p className="text-[11px] text-slate-400 font-mono">
+                        Rekor terpanjang: {e.bestStreak} hari
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold text-teal-300">{e.currentStreak} hari</p>
+                      <p className="text-[11px] text-slate-400 font-mono">{e.kuaciInStreak} kuaci</p>
+                    </div>
+                  </button>
                 </li>
               ))}
             </ol>
