@@ -124,7 +124,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
         <button
           type="button"
           onClick={() => setCleanMode((v) => !v)}
-          className={`absolute top-4 right-4 z-40 flex items-center justify-center w-9 h-9 rounded-xl border backdrop-blur-md transition-all active:scale-95 cursor-pointer ${
+          className={`absolute bottom-4 left-4 z-40 flex items-center justify-center w-9 h-9 rounded-xl border backdrop-blur-md transition-all active:scale-95 cursor-pointer ${
             cleanMode
               ? 'bg-black/30 border-white/10 text-white/40 hover:text-white hover:bg-black/50'
               : 'bg-slate-900/80 border-teal-500/30 text-teal-300 hover:bg-slate-800'

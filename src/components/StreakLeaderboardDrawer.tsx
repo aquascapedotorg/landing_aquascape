@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Trophy, Crown } from 'lucide-react';
+import { X, Trophy, Crown, Search } from 'lucide-react';
 import { getLeaderboard } from '../services/streakService';
 import { LeaderboardEntry } from '../services/streakCalculations';
 import { aquascapeEvents } from './aquascapeEvents';
@@ -13,6 +13,7 @@ interface DrawerProps {
 export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -23,6 +24,7 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
     return () => {
       unsubscribe();
       aquascapeEvents.clearFishHighlight();
+      setQuery(''); // reset search when the drawer closes
     };
   }, [isOpen]);
 
@@ -30,6 +32,12 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
 
   const crownColor = (rank: number) =>
     rank === 1 ? 'text-amber-400' : rank === 2 ? 'text-slate-300' : 'text-orange-400';
+
+  // Case-insensitive name filter; original ranks are preserved.
+  const trimmedQuery = query.trim().toLowerCase();
+  const visibleEntries = trimmedQuery
+    ? entries.filter((e) => e.name.toLowerCase().includes(trimmedQuery))
+    : entries;
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-end">
@@ -61,14 +69,44 @@ export const StreakLeaderboardDrawer: React.FC<DrawerProps> = ({ isOpen, onClose
           </button>
         </header>
 
+        {/* Search box: filters the list by name (case-insensitive). */}
+        <div className="px-4 py-3 border-b border-slate-800">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name..."
+              aria-label="Search participant name"
+              className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-900/80 border border-slate-700/60 focus:border-teal-400/60 focus:outline-none focus:ring-2 focus:ring-teal-400/20 text-sm text-white placeholder:text-slate-500 transition-all"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-400 hover:text-white cursor-pointer"
+                title="Clear"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-3 py-3">
           {entries.length === 0 ? (
             <div className="text-center text-slate-400 text-sm py-16 px-6">
               No entries yet.
             </div>
+          ) : visibleEntries.length === 0 ? (
+            <div className="text-center text-slate-400 text-sm py-16 px-6">
+              No participant matches &quot;{query.trim()}&quot;.
+            </div>
           ) : (
             <ol className="space-y-1.5">
-              {entries.map((e) => (
+              {visibleEntries.map((e) => (
                 <li key={e.name}>
                   <button
                     type="button"
