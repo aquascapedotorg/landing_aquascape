@@ -26,6 +26,19 @@ export function toDateString(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * Canonicalizes a participant name so accidental whitespace variants collapse
+ * to one identity: trims ends and squashes internal whitespace runs to a single
+ * space. Case is intentionally preserved (distinct casing = distinct person),
+ * matching the project's case-sensitive naming decision.
+ *
+ * Example: "Piki Rahmadi " and "Piki  Rahmadi" both become "Piki Rahmadi".
+ * Typos (e.g. "Dyawana" vs "Dwayana") are NOT merged — that needs human judgment.
+ */
+export function normalizeName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
 function parseDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d);
@@ -135,28 +148,36 @@ export function computeLeaderboard(
   today: string,
   holidays: Set<string>
 ): LeaderboardEntry[] {
-  // Group attendance dates per name (unique) and track earliest created_at.
+  // Group attendance dates per NORMALIZED name (unique) and track earliest
+  // created_at. Normalizing here merges whitespace variants (e.g. a trailing
+  // space) into one participant so their streak does not split into duplicates.
   const datesByName = new Map<string, Set<string>>();
   const firstSeenByName = new Map<string, string>();
   for (const row of attendance) {
     if (!row || !row.name || !row.entry_date) continue;
-    if (!datesByName.has(row.name)) datesByName.set(row.name, new Set());
-    datesByName.get(row.name)!.add(row.entry_date);
+    const name = normalizeName(row.name);
+    if (!name) continue;
+    if (!datesByName.has(name)) datesByName.set(name, new Set());
+    datesByName.get(name)!.add(row.entry_date);
 
     if (row.created_at) {
-      const prev = firstSeenByName.get(row.name);
+      const prev = firstSeenByName.get(name);
       if (prev === undefined || row.created_at < prev) {
-        firstSeenByName.set(row.name, row.created_at);
+        firstSeenByName.set(name, row.created_at);
       }
     }
   }
 
-  // Kuaci lookup: name -> (date -> count)
+  // Kuaci lookup keyed by NORMALIZED name, summing counts across variants so a
+  // date's kuaci from differently-spaced names is not lost.
   const kuaciByName = new Map<string, Map<string, number>>();
   for (const row of kuaci) {
     if (!row || !row.name) continue;
-    if (!kuaciByName.has(row.name)) kuaciByName.set(row.name, new Map());
-    kuaciByName.get(row.name)!.set(row.entry_date, row.kuaci_count || 0);
+    const name = normalizeName(row.name);
+    if (!name) continue;
+    if (!kuaciByName.has(name)) kuaciByName.set(name, new Map());
+    const dateMap = kuaciByName.get(name)!;
+    dateMap.set(row.entry_date, (dateMap.get(row.entry_date) || 0) + (row.kuaci_count || 0));
   }
 
   const entries: LeaderboardEntry[] = [];

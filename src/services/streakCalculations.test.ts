@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeLeaderboard,
   isSkipDay,
+  normalizeName,
   AttendanceRow,
   KuaciRow,
 } from './streakCalculations';
@@ -95,5 +96,32 @@ describe('computeLeaderboard tie-break by firstSeen', () => {
     const att = [A('Ali', '2026-02-16', '2026-02-16T08:00:00Z')];
     const [row] = computeLeaderboard(att, [], '2026-02-16', NO_HOLIDAYS);
     expect(row.firstSeen).toBe('2026-02-16T08:00:00Z');
+  });
+});
+
+describe('normalizeName', () => {
+  it('trims ends and squashes internal whitespace, preserving case', () => {
+    expect(normalizeName('Piki Rahmadi ')).toBe('Piki Rahmadi');
+    expect(normalizeName('  Piki Rahmadi')).toBe('Piki Rahmadi');
+    expect(normalizeName('Piki  Rahmadi')).toBe('Piki Rahmadi');
+    expect(normalizeName('piki rahmadi')).toBe('piki rahmadi'); // case preserved
+  });
+});
+
+describe('computeLeaderboard whitespace-variant merging', () => {
+  it('merges attendance from whitespace-variant names into one participant', () => {
+    // Same person wrote a trailing space on the 2nd day (02-13 Fri, 02-16 Mon bridge weekend)
+    const att = [A('Piki Rahmadi', '2026-02-13'), A('Piki Rahmadi ', '2026-02-16')];
+    const board = computeLeaderboard(att, [], '2026-02-16', NO_HOLIDAYS);
+    expect(board).toHaveLength(1); // one entry, not two
+    expect(board[0].name).toBe('Piki Rahmadi'); // normalized display
+    expect(board[0].currentStreak).toBe(2); // streak joined across variants
+  });
+
+  it('sums kuaci across whitespace-variant names for the same date', () => {
+    const att = [A('Budi', '2026-02-16'), A('Budi ', '2026-02-16')];
+    const kuaci = [K('Budi', '2026-02-16', 3), K('Budi ', '2026-02-16', 4)];
+    const [row] = computeLeaderboard(att, kuaci, '2026-02-16', NO_HOLIDAYS);
+    expect(row.kuaciInStreak).toBe(7);
   });
 });
