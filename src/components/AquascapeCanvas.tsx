@@ -22,6 +22,7 @@ import {
 } from './fishRenderer';
 import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
+import { normalizeName } from '../services/streakCalculations';
 import { recordKuaciEaten, getStreakFor } from '../services/streakService';
 import { CommunalFishInput } from './aquascapeEvents';
 import {
@@ -410,6 +411,28 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     []
   );
 
+  const highlightFish = useCallback(
+    (name: string, opts: { hover?: boolean; focus?: boolean }) => {
+      const target = normalizeName(name);
+      fishRef.current.forEach((f) => {
+        if (normalizeName(f.name) === target) {
+          if (opts.hover) f.hovered = true;
+          if (opts.focus) f.highlightUntil = Date.now() + 4000;
+        }
+      });
+    },
+    []
+  );
+
+  const clearFishHighlight = useCallback((name?: string) => {
+    const target = name ? normalizeName(name) : null;
+    fishRef.current.forEach((f) => {
+      if (target === null || normalizeName(f.name) === target) {
+        f.hovered = false;
+      }
+    });
+  }, []);
+
   const canvasIdRef = useRef<string>(isHeroOnly ? 'hero' : `zen-${Math.random()}`);
 
   // Register with aquascapeEvents provider
@@ -426,12 +449,14 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       },
       syncCommunalFish: (fishes) => syncCommunalFish(fishes),
       spawnFish: (species, name) => spawnFish(species, name),
+      highlightFish: (name, opts) => highlightFish(name, opts),
+      clearFishHighlight: (name) => clearFishHighlight(name),
     });
 
     return () => {
       unregister();
     };
-  }, [dropFood, spawnBaby, syncCommunalFish, spawnFish]);
+  }, [dropFood, spawnBaby, syncCommunalFish, spawnFish, highlightFish, clearFishHighlight]);
 
   // Re-apply catalog names when asynchronously loaded
   useEffect(() => {
@@ -1110,6 +1135,32 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         fish.angle = isFacingLeft ? Math.PI - pitch : pitch;
         fish.tailPhase += fish.tailSpeed * (0.8 + speed * 0.8);
 
+        // Highlight glow (hover) / spotlight (click, time-decayed) drawn behind fish.
+        const isFocus = fish.highlightUntil !== undefined && fish.highlightUntil > currentTime;
+        const isHighlight = fish.hovered === true || isFocus;
+        if (isHighlight) {
+          const glowR = Math.max(26, fish.size * 1.4);
+          const g = ctx.createRadialGradient(fish.x, fish.y, 0, fish.x, fish.y, glowR);
+          const strength = isFocus ? 0.55 : 0.32;
+          g.addColorStop(0, `rgba(45, 212, 191, ${strength})`);
+          g.addColorStop(1, 'rgba(45, 212, 191, 0)');
+          ctx.save();
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(fish.x, fish.y, glowR, 0, Math.PI * 2);
+          ctx.fill();
+          if (isFocus) {
+            // Pulsing ring marker around the focused fish.
+            const pulse = glowR * (0.7 + Math.sin(timeSec * 6) * 0.12);
+            ctx.strokeStyle = 'rgba(94, 234, 212, 0.9)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(fish.x, fish.y, pulse, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
         // ---------------------------------------------------------
         // RENDER FISH GRAPHICS
         // ---------------------------------------------------------
@@ -1322,9 +1373,9 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         // 7b. Interactive Nametag on Hover / Always On
         const distToMouse = Math.hypot(fish.x - mouseRef.current.x, fish.y - mouseRef.current.y);
         const isHovered = mouseRef.current.active && distToMouse < Math.max(38, fish.size * 1.5);
-        if (currentSettings.showNametags || isHovered) {
+        if (currentSettings.showNametags || isHovered || isHighlight) {
           const streakInfo = fish.isCommunal ? getStreakFor(fish.name) : undefined;
-          drawFishNametag(ctx, fish, isHovered, streakInfo);
+          drawFishNametag(ctx, fish, isHovered || isHighlight, streakInfo);
         }
       }
 
