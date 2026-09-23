@@ -15,6 +15,7 @@ export interface AquascapeCanvasProvider {
   spawnFish?: (species: FishSpeciesType, name?: string) => FishParticle | undefined;
   highlightFish?: (name: string, opts: { hover?: boolean; focus?: boolean }) => void;
   clearFishHighlight?: (name?: string) => void;
+  getCanvasSize?: () => { width: number; height: number };
 }
 
 class AquascapeEventManager {
@@ -110,6 +111,29 @@ class AquascapeEventManager {
       }
     }
     return [];
+  }
+
+  /**
+   * Like getExistingFishList, but also returns the source canvas dimensions so a
+   * newly mounting canvas (e.g. Zen) can rescale inherited fish positions
+   * proportionally instead of assuming a fixed resolution. width/height are
+   * undefined when the source provider does not report a size.
+   */
+  public getExistingFishWithSize(): {
+    fish: FishParticle[];
+    width?: number;
+    height?: number;
+  } {
+    for (const p of this.providers) {
+      if (p.provider.getFishList) {
+        const list = p.provider.getFishList();
+        if (list && list.length > 0) {
+          const size = p.provider.getCanvasSize ? p.provider.getCanvasSize() : undefined;
+          return { fish: list, width: size?.width, height: size?.height };
+        }
+      }
+    }
+    return { fish: [] };
   }
 
   public renameFish(id: number, newName: string): void {

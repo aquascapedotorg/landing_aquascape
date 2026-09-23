@@ -220,15 +220,21 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
     if (fishRef.current.length === 0) {
       // 1. Inherit from active provider if another canvas (e.g. Hero canvas when Zen mounts) already has live fish!
-      const existingLive = aquascapeEvents.getExistingFishList();
+      const existing = aquascapeEvents.getExistingFishWithSize();
+      const existingLive = existing.fish;
       let fish: FishParticle[];
 
       if (existingLive && existingLive.length > 0) {
+        // Rescale inherited positions PROPORTIONALLY using the source canvas's
+        // actual size (not a hardcoded resolution), so fish keep their relative
+        // spread on any screen instead of piling up at an edge.
+        const srcW = existing.width && existing.width > 0 ? existing.width : width;
+        const srcH = existing.height && existing.height > 0 ? existing.height : height;
         fish = existingLive.map((f) => ({
           ...f,
           id: f.id,
-          x: Math.min(Math.max(20, (f.x / 800) * width), width - 20),
-          y: Math.min(Math.max(20, (f.y / 500) * height), height - 20),
+          x: Math.min(Math.max(20, (f.x / srcW) * width), width - 20),
+          y: Math.min(Math.max(20, (f.y / srcH) * height), height - 20),
         }));
       } else {
         fish = createFishSchool(width, height, targetDensity, activeSpecies, supabaseMode);
@@ -451,6 +457,13 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       spawnFish: (species, name) => spawnFish(species, name),
       highlightFish: (name, opts) => highlightFish(name, opts),
       clearFishHighlight: (name) => clearFishHighlight(name),
+      getCanvasSize: () => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        return {
+          width: rect && rect.width > 0 ? rect.width : 800,
+          height: rect && rect.height > 0 ? rect.height : 500,
+        };
+      },
     });
 
     return () => {
