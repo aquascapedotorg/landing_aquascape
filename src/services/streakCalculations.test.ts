@@ -125,3 +125,33 @@ describe('computeLeaderboard whitespace-variant merging', () => {
     expect(row.kuaciInStreak).toBe(7);
   });
 });
+
+describe('computeLeaderboard species', () => {
+  it('uses the species from the latest-created_at attendance row', () => {
+    const att = [
+      { name: 'Budi', entry_date: '2026-02-16', created_at: '2026-02-16T08:00:00Z', species: 'shark' },
+      { name: 'Budi', entry_date: '2026-02-17', created_at: '2026-02-17T08:00:00Z', species: 'whale' },
+    ];
+    const [row] = computeLeaderboard(att, [], '2026-02-17', new Set());
+    expect(row.species).toBe('whale'); // latest created_at wins
+  });
+
+  it('defaults species to neonTetra when missing or unknown', () => {
+    const att = [
+      { name: 'Ali', entry_date: '2026-02-16', created_at: '2026-02-16T08:00:00Z' },
+      { name: 'Cici', entry_date: '2026-02-16', created_at: '2026-02-16T08:00:00Z', species: '' },
+      { name: 'Dedi', entry_date: '2026-02-16', created_at: '2026-02-16T08:00:00Z', species: 'zzz-unknown' },
+    ];
+    const board = computeLeaderboard(att, [], '2026-02-16', new Set());
+    const byName = Object.fromEntries(board.map((r) => [r.name, r.species]));
+    expect(byName['Ali']).toBe('neonTetra');
+    expect(byName['Cici']).toBe('neonTetra');
+    expect(byName['Dedi']).toBe('neonTetra');
+  });
+
+  it('maps Indonesian alias species via normalizeFishSpecies', () => {
+    const att = [{ name: 'Eka', entry_date: '2026-02-16', created_at: '2026-02-16T08:00:00Z', species: 'hiu' }];
+    const [row] = computeLeaderboard(att, [], '2026-02-16', new Set());
+    expect(row.species).toBe('shark');
+  });
+});

@@ -1,7 +1,11 @@
+import { FishSpeciesType } from '../types';
+import { normalizeFishSpecies } from './supabaseFishService';
+
 export interface AttendanceRow {
   name: string;
   entry_date: string; // YYYY-MM-DD
   created_at?: string; // ISO string, used for firstSeen tie-break
+  species?: string | null; // raw species from communal_fishes
 }
 
 export interface KuaciRow {
@@ -16,6 +20,7 @@ export interface LeaderboardEntry {
   bestStreak: number;
   kuaciInStreak: number;
   firstSeen: string; // MIN(created_at) or '' when unknown
+  species: FishSpeciesType; // from the latest-created_at attendance row
   rank: number;
 }
 
@@ -153,6 +158,7 @@ export function computeLeaderboard(
   // space) into one participant so their streak does not split into duplicates.
   const datesByName = new Map<string, Set<string>>();
   const firstSeenByName = new Map<string, string>();
+  const latestSpeciesByName = new Map<string, { at: string; species: string }>();
   for (const row of attendance) {
     if (!row || !row.name || !row.entry_date) continue;
     const name = normalizeName(row.name);
@@ -165,6 +171,13 @@ export function computeLeaderboard(
       if (prev === undefined || row.created_at < prev) {
         firstSeenByName.set(name, row.created_at);
       }
+    }
+
+    // Track species from the row with the newest created_at (fallback: any row).
+    const at = row.created_at || '';
+    const prevSp = latestSpeciesByName.get(name);
+    if (!prevSp || at >= prevSp.at) {
+      latestSpeciesByName.set(name, { at, species: row.species || '' });
     }
   }
 
@@ -198,6 +211,7 @@ export function computeLeaderboard(
       bestStreak,
       kuaciInStreak,
       firstSeen: firstSeenByName.get(name) || '',
+      species: normalizeFishSpecies(latestSpeciesByName.get(name)?.species),
       rank: 0,
     });
   }
