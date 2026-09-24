@@ -23,7 +23,9 @@ import {
 import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { normalizeName } from '../services/streakCalculations';
-import { getLegendaryNames } from '../services/legendaryService';
+import { getLegendaryNames, getTodayLegendaryList } from '../services/legendaryService';
+import { shouldTeaseLegend } from '../services/legendaryPresence';
+import { GhostKoi, createGhostKoi, updateGhostKoi } from './ghostKoi';
 import { resolveLighting } from '../data/lightingUtils';
 import { ensureMascotSprite, getMascotSprite, getMascotAspect, getMascotParts } from './mascotImage';
 import { recordKuaciEaten, getStreakFor } from '../services/streakService';
@@ -131,6 +133,10 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
   const bubblesRef = useRef<BubbleParticle[]>([]);
   const foodRef = useRef<FoodParticle[]>([]);
   const legendaryTrailRef = useRef<Map<number, { x: number; y: number }[]>>(new Map());
+  // Ghost "Legend?" koi: swims separately from fishRef so it is never counted,
+  // clickable, or made legendary. Active only while no legend exists today.
+  const ghostRef = useRef<GhostKoi | null>(null);
+  const ghostActiveRef = useRef(false);
   const plantsRef = useRef<PlantStem[]>([]);
   const ripplesRef = useRef<{ x: number; y: number; r: number; opacity: number }[]>([]);
   const mouseRef = useRef<{ x: number; y: number; isDown: boolean; active: boolean }>({
@@ -460,6 +466,19 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       f.isLegendary = f.isCommunal === true && names.has(normalizeName(f.name));
     });
   }, []);
+
+  // Ghost koi is active only in the full Zen canvas, in Supabase mode, while no
+  // legend has been born yet today. Recompute on mount and on legendary updates.
+  useEffect(() => {
+    const recompute = () => {
+      ghostActiveRef.current =
+        !isHeroOnly && isSupabaseModeActive() && shouldTeaseLegend(getTodayLegendaryList());
+      if (!ghostActiveRef.current) ghostRef.current = null;
+    };
+    recompute();
+    const unsub = aquascapeEvents.onLegendaryUpdated(recompute);
+    return unsub;
+  }, [isHeroOnly]);
 
   const canvasIdRef = useRef<string>(isHeroOnly ? 'hero' : `zen-${Math.random()}`);
 
@@ -1553,6 +1572,89 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           const streakInfo = fish.isCommunal ? getStreakFor(fish.name) : undefined;
           drawFishNametag(ctx, fish, isHovered || isHighlight, streakInfo);
         }
+      }
+
+      // -------------------------------------------------------------
+      // 7c. Ghost "Legend?" koi — swims separately from fishRef so it is never
+      //     counted, clickable, or made legendary. Drawn dim/translucent as a
+      //     hint that today's legend has not been born yet.
+      // -------------------------------------------------------------
+      if (ghostActiveRef.current && !cleanModeRef.current) {
+        if (!ghostRef.current) ghostRef.current = createGhostKoi(w, h);
+        const gk = ghostRef.current;
+        updateGhostKoi(gk, dt, w, h);
+
+        const facingLeft = gk.vx < 0;
+        const tailWag = Math.sin(gk.tailPhase) * 0.28;
+
+        ctx.save();
+        ctx.globalAlpha = 0.5; // ghostly translucency
+        ctx.translate(gk.x, gk.y);
+        if (facingLeft) ctx.scale(-1, 1);
+
+        const L = gk.size * 1.15;
+        const Hh = L * 0.42;
+
+        // Soft golden glow
+        const glowR = Math.max(30, gk.size * 1.6);
+        const gg = ctx.createRadialGradient(0, 0, 0, 0, 0, glowR);
+        gg.addColorStop(0, 'rgba(255, 215, 0, 0.28)');
+        gg.addColorStop(1, 'rgba(245, 197, 66, 0)');
+        ctx.fillStyle = gg;
+        ctx.beginPath();
+        ctx.arc(0, 0, glowR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tail (fan, wagging)
+        ctx.save();
+        ctx.translate(-L * 0.42, 0);
+        ctx.rotate(tailWag * 1.2);
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(-L * 0.35, -Hh * 0.9, -L * 0.55, -Hh * 0.5);
+        ctx.quadraticCurveTo(-L * 0.4, 0, -L * 0.55, Hh * 0.5);
+        ctx.quadraticCurveTo(-L * 0.35, Hh * 0.9, 0, 0);
+        ctx.fill();
+        ctx.restore();
+
+        // Body (translucent gold ellipse)
+        const bg = ctx.createLinearGradient(0, -Hh, 0, Hh);
+        bg.addColorStop(0, 'rgba(255, 243, 176, 0.45)');
+        bg.addColorStop(0.5, 'rgba(245, 197, 66, 0.4)');
+        bg.addColorStop(1, 'rgba(184, 134, 11, 0.4)');
+        ctx.fillStyle = bg;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, L * 0.5, Hh, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 224, 128, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Dorsal + ventral fins
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.35)';
+        ctx.beginPath();
+        ctx.moveTo(L * 0.05, -Hh);
+        ctx.quadraticCurveTo(-L * 0.1, -Hh * 1.8, -L * 0.25, -Hh * 0.9);
+        ctx.lineTo(-L * 0.1, -Hh * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(L * 0.05, Hh);
+        ctx.quadraticCurveTo(-L * 0.1, Hh * 1.8, -L * 0.25, Hh * 0.9);
+        ctx.lineTo(-L * 0.1, Hh * 0.7);
+        ctx.closePath();
+        ctx.fill();
+
+        // Eye
+        ctx.fillStyle = 'rgba(58, 42, 0, 0.7)';
+        ctx.beginPath();
+        ctx.arc(L * 0.32, -Hh * 0.15, Math.max(1.5, L * 0.045), 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      } else if (ghostRef.current) {
+        ghostRef.current = null;
       }
 
       // -------------------------------------------------------------

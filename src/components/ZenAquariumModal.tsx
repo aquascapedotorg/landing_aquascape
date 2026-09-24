@@ -8,8 +8,6 @@ import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { subscribeToViewerCount } from '../services/presenceService';
 import { resolveLighting } from '../data/lightingUtils';
 import { getTodayLegendaryList } from '../services/legendaryService';
-import { shouldTeaseLegend } from '../services/legendaryPresence';
-import { LegendaryKoiSilhouette } from './LegendaryKoiSilhouette';
 import { aquascapeEvents } from './aquascapeEvents';
 import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff, Fish, Sparkles } from 'lucide-react';
 
@@ -102,23 +100,6 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
       const list = getTodayLegendaryList();
       setLegendaryName(list.length > 0 ? list[list.length - 1].name : null);
     };
-    update();
-    const settle = setTimeout(update, 400);
-    const unsub = aquascapeEvents.onLegendaryUpdated(update);
-    return () => {
-      clearTimeout(settle);
-      unsub();
-    };
-  }, [isOpen]);
-
-  // No legend has been born yet TODAY. While that's true we show a dimmed golden
-  // koi silhouette teaser ("Legend Incoming") — an invitation while the day's
-  // legend has not appeared. It disappears once the first legend of the day is
-  // chosen (then the real gold koi takes over). Recomputed on legendary updates.
-  const [teaseLegend, setTeaseLegend] = useState(false);
-  useEffect(() => {
-    if (!isOpen) return;
-    const update = () => setTeaseLegend(shouldTeaseLegend(getTodayLegendaryList()));
     update();
     const settle = setTimeout(update, 400);
     const unsub = aquascapeEvents.onLegendaryUpdated(update);
@@ -327,27 +308,6 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
                 <p className="text-[10px] text-amber-300/80 font-mono">Aquascape Legend</p>
               </div>
               <Sparkles className="w-4 h-4 text-amber-300" />
-            </div>
-          </div>
-        )}
-
-        {/* "Legend Incoming" teaser: no legend has been born yet today. Shows a
-            dimmed golden koi silhouette as an invitation until the day's first
-            legend appears. Placed just to the RIGHT of the "AQUASCAPE Live Tank"
-            badge in the top bar. Supabase-only (list is empty otherwise); hidden
-            in clean mode and once a legend exists (teaseLegend goes false). */}
-        {!cleanMode && supabaseMode && teaseLegend && (
-          <div className="absolute top-4 sm:top-6 left-[15rem] sm:left-[17rem] pointer-events-none" style={{ zIndex: 55 }}>
-            <div className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-amber-300/40 bg-gradient-to-r from-amber-950/60 via-yellow-900/40 to-amber-950/60 backdrop-blur-md shadow-[0_0_16px_rgba(255,215,0,0.2)]">
-              <LegendaryKoiSilhouette size={40} />
-              <div className="leading-tight">
-                <p className="text-sm font-bold text-amber-200/90 tracking-wide">
-                  Legend Incoming
-                </p>
-                <p className="text-[10px] text-amber-300/70 font-mono">
-                  Who will be legend today?
-                </p>
-              </div>
             </div>
           </div>
         )}
