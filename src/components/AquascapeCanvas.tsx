@@ -621,6 +621,13 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     const handleResize = () => {
       if (!containerRef.current || !canvas) return;
       const rect = containerRef.current.getBoundingClientRect();
+      // If the container hasn't been laid out yet (width/height 0), retry next
+      // frame instead of sizing the canvas to 0 (which left a black strip when a
+      // flex parent measured width 0 before layout settled).
+      if (rect.width < 1 || rect.height < 1) {
+        requestAnimationFrame(handleResize);
+        return;
+      }
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
       canvas.width = rect.width * dpr;
@@ -628,6 +635,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
 
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
       initAquascape(rect.width, rect.height);
     };

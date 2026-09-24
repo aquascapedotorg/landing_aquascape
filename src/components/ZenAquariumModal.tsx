@@ -7,7 +7,8 @@ import { AquascapeSettings } from '../types';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { subscribeToViewerCount } from '../services/presenceService';
 import { resolveLighting } from '../data/lightingUtils';
-import { getTodayLegendaryList } from '../services/legendaryService';
+import { getTodayLegendaryList, getLegendaryNames } from '../services/legendaryService';
+import { normalizeName } from '../services/streakCalculations';
 import { aquascapeEvents } from './aquascapeEvents';
 import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff, Fish, Sparkles } from 'lucide-react';
 
@@ -109,6 +110,38 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
     };
   }, [isOpen]);
 
+  // The legendary "Chosen Today" banner auto-hides 3 seconds AFTER the winning koi
+  // has actually spawned on the canvas (its name appears in the live roster), so
+  // viewers get a moment to spot the golden koi, then the banner clears itself.
+  const [legendBannerHidden, setLegendBannerHidden] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    // A newly-announced legend starts visible again.
+    setLegendBannerHidden(false);
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+    const check = () => {
+      if (hideTimer) return; // already scheduled
+      const legendNames = getLegendaryNames();
+      if (legendNames.size === 0) return;
+      const onCanvas = aquascapeEvents
+        .getFishList()
+        .some((f) => f.isLegendary || legendNames.has(normalizeName(f.name)));
+      if (onCanvas) {
+        hideTimer = setTimeout(() => setLegendBannerHidden(true), 3000);
+      }
+    };
+    check();
+    const settle = setTimeout(check, 500);
+    const unsubRoster = aquascapeEvents.onFishRosterChanged(check);
+    const unsubLegendary = aquascapeEvents.onLegendaryUpdated(check);
+    return () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      clearTimeout(settle);
+      unsubRoster();
+      unsubLegendary();
+    };
+  }, [isOpen, legendaryName]);
+
   // Clean mode: hide all Zen UI (header, telemetry HUD, buttons, controls, tips)
   // AND the fish nametags, leaving only the aquarium for a distraction-free view.
   const [cleanMode, setCleanMode] = useState(false);
@@ -154,9 +187,11 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black text-white animate-fade-in overflow-hidden">
-      {/* 1. Fullscreen Living Aquascape Simulation Canvas */}
-      <div className="relative flex-1 w-full h-full">
+    <div className="fixed inset-0 z-50 bg-black text-white animate-fade-in overflow-hidden">
+      {/* 1. Fullscreen Living Aquascape Simulation Canvas — absolutely filling the
+          fixed modal so its width/height always match the viewport (a flex child
+          could measure width 0 before layout settled, leaving a black strip). */}
+      <div className="absolute inset-0">
         <AquascapeCanvas
           settings={canvasSettings}
           className="w-full h-full"
@@ -297,7 +332,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
         )}
 
         {/* Legendary announcement banner (Supabase-only, hidden in clean mode) */}
-        {!cleanMode && supabaseMode && legendaryName && (
+        {!cleanMode && supabaseMode && legendaryName && !legendBannerHidden && (
           <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
             <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl border border-amber-300/60 bg-gradient-to-r from-amber-950/80 via-yellow-900/70 to-amber-950/80 backdrop-blur-md shadow-[0_0_20px_rgba(255,215,0,0.35)]">
               <Sparkles className="w-4 h-4 text-amber-300" />
