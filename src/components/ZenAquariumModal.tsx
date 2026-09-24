@@ -5,7 +5,8 @@ import { FishCustomizerModal } from './FishCustomizerModal';
 import { StreakLeaderboardDrawer } from './StreakLeaderboardDrawer';
 import { AquascapeSettings } from '../types';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
-import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff } from 'lucide-react';
+import { aquascapeEvents } from './aquascapeEvents';
+import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff, Fish } from 'lucide-react';
 
 interface Telemetry {
   temperature: string;
@@ -63,6 +64,22 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
   // fauna customization (species/density/naming) does not apply — hide it.
   const supabaseMode = isSupabaseModeActive();
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+
+  // Live count of fish currently in the tank, updated whenever the roster changes.
+  const [fishCount, setFishCount] = useState(0);
+  useEffect(() => {
+    if (!isOpen) return;
+    const update = () => setFishCount(aquascapeEvents.getFishList().length);
+    update();
+    // Poll briefly after open so the count reflects the freshly-mounted Zen canvas,
+    // then rely on roster-change events for updates (spawn / sync / density).
+    const settle = setTimeout(update, 400);
+    const unsubscribe = aquascapeEvents.onFishRosterChanged(update);
+    return () => {
+      clearTimeout(settle);
+      unsubscribe();
+    };
+  }, [isOpen]);
 
   // Clean mode: hide all Zen UI (header, telemetry HUD, buttons, controls, tips)
   // AND the fish nametags, leaving only the aquarium for a distraction-free view.
@@ -191,6 +208,16 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
                 <span className="hidden sm:inline">Fauna & Nama Ikan</span>
               </button>
             )}
+
+            {/* Live fish count — placed to the left of the Ranking button. */}
+            <div
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/80 border border-teal-500/20 text-teal-200 font-semibold text-xs shadow-lg backdrop-blur-md"
+              title="Jumlah ikan di akuarium"
+            >
+              <Fish className="w-4 h-4 text-teal-400" />
+              <span>{fishCount}</span>
+              <span className="hidden sm:inline text-teal-300/70 font-normal">ikan</span>
+            </div>
 
             {supabaseMode && (
               <button
