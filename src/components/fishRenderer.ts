@@ -1567,9 +1567,13 @@ export function drawFishNametag(
   const badgeWidth = textWidth + (isHovered ? 22 : 14);
   const badgeHeight = isHovered ? 20 : 16;
 
-  // Frosted dark pill background
-  ctx.fillStyle = isHovered ? 'rgba(9, 19, 29, 0.94)' : 'rgba(9, 19, 29, 0.68)';
-  ctx.strokeStyle = isHovered ? 'rgba(45, 212, 191, 0.9)' : 'rgba(45, 212, 191, 0.35)';
+  // Frosted dark pill background (gold when legendary).
+  ctx.fillStyle = fish.isLegendary
+    ? 'rgba(40, 30, 0, 0.9)'
+    : isHovered ? 'rgba(9, 19, 29, 0.94)' : 'rgba(9, 19, 29, 0.68)';
+  ctx.strokeStyle = fish.isLegendary
+    ? 'rgba(255, 215, 0, 0.95)'
+    : isHovered ? 'rgba(45, 212, 191, 0.9)' : 'rgba(45, 212, 191, 0.35)';
   ctx.lineWidth = 1;
 
   ctx.beginPath();
@@ -1583,8 +1587,8 @@ export function drawFishNametag(
   ctx.arc(-badgeWidth / 2 + (isHovered ? 7 : 5), 0, isHovered ? 2.5 : 2, 0, Math.PI * 2);
   ctx.fill();
 
-  // Fish Name Text
-  ctx.fillStyle = isHovered ? '#ffffff' : '#e2e8f0';
+  // Fish Name Text (gold when legendary).
+  ctx.fillStyle = fish.isLegendary ? '#ffe680' : isHovered ? '#ffffff' : '#e2e8f0';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(displayName, isHovered ? 4 : 3, 0);

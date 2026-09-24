@@ -1539,7 +1539,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         // 7b. Interactive Nametag on Hover / Always On
         const distToMouse = Math.hypot(fish.x - mouseRef.current.x, fish.y - mouseRef.current.y);
         const isHovered = mouseRef.current.active && distToMouse < Math.max(38, fish.size * 1.5);
-        if (currentSettings.showNametags || isHovered || isHighlight) {
+        if (currentSettings.showNametags || isHovered || isHighlight || fish.isLegendary) {
           const streakInfo = fish.isCommunal ? getStreakFor(fish.name) : undefined;
           drawFishNametag(ctx, fish, isHovered || isHighlight, streakInfo);
         }
