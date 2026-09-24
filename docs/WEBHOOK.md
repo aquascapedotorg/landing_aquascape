@@ -84,6 +84,12 @@ Kolom `created_at` dan `entry_date` **diisi otomatis** oleh database — jangan 
 | `pufferfish` | Ikan Buntal |
 | `orca` | Paus Orca |
 | `turtle` | Penyu |
+| `marlin` | Marlin (paruh panjang, cepat) |
+| `anglerfish` | Anglerfish (umpan bercahaya) |
+| `lanternfish` | Lanternfish (laut dalam, photophore) |
+| `viperfish` | Viperfish (gigi taring) |
+| `moray` | Moray Eel (belut karang) |
+| `electricEel` | Electric Eel (belut listrik) |
 
 ### 4b. Alias yang juga diterima (Indonesia / umum)
 
@@ -101,6 +107,9 @@ Pencocokan **tidak peka huruf besar/kecil** dan spasi di ujung diabaikan.
 | `udang`, `shrimp` | `cherryShrimp` |
 | `penyu` | `turtle` |
 | `pembunuh`, `paus orca` | `orca` |
+
+> Spesies baru (`marlin`, `anglerfish`, `lanternfish`, `viperfish`, `moray`,
+> `electricEel`) **belum punya alias Indonesia** — kirim pakai **ID resmi** di 4a.
 
 ### 4c. Fallback
 
