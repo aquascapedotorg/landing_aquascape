@@ -1,5 +1,5 @@
 import { FishParticle, FishSpeciesType } from '../types';
-import { getFishName } from '../data/fishCatalog';
+import { getFishName, FISH_CATALOG } from '../data/fishCatalog';
 import { getHungerStatus } from './lifeCycleHelper';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
 
@@ -1757,32 +1757,33 @@ export function drawFishNametag(
 
   // Extra hover tooltip line: Species, Kuaci eaten, Stage & Hunger Level
   if (isHovered) {
+    // Display label per species. Falls back to the catalog name (never a wrong
+    // hardcoded default) so any newly-added species is labelled correctly.
+    const SPECIES_LABELS: Partial<Record<FishSpeciesType, string>> = {
+      angelfish: 'Manfish',
+      rasbora: 'Rasbora',
+      guppy: 'Guppy',
+      mascot: 'Origami',
+      cherryShrimp: 'Shrimp',
+      shark: 'Hiu',
+      whale: 'Paus',
+      orca: 'Paus Orca',
+      turtle: 'Penyu',
+      dolphin: 'Lumba-lumba',
+      mantaRay: 'Pari',
+      pufferfish: 'Buntal',
+      neonTetra: 'Tetra',
+      marlin: 'Marlin',
+      anglerfish: 'Anglerfish',
+      lanternfish: 'Lanternfish',
+      viperfish: 'Viperfish',
+      moray: 'Moray',
+      electricEel: 'Belut Listrik',
+    };
     const speciesLabel =
-      fish.type === 'angelfish'
-        ? 'Manfish'
-        : fish.type === 'rasbora'
-        ? 'Rasbora'
-        : fish.type === 'guppy'
-        ? 'Guppy'
-        : fish.type === 'mascot'
-        ? 'Origami'
-        : fish.type === 'cherryShrimp'
-        ? 'Shrimp'
-        : fish.type === 'shark'
-        ? 'Hiu'
-        : fish.type === 'whale'
-        ? 'Paus'
-        : fish.type === 'orca'
-        ? 'Paus Orca'
-        : fish.type === 'turtle'
-        ? 'Penyu'
-        : fish.type === 'dolphin'
-        ? 'Lumba-lumba'
-        : fish.type === 'mantaRay'
-        ? 'Pari'
-        : fish.type === 'pufferfish'
-        ? 'Buntal'
-        : 'Tetra';
+      SPECIES_LABELS[fish.type] ||
+      FISH_CATALOG.species.find((s) => s.id === fish.type)?.name ||
+      'Ikan';
 
     const stageLabel = fish.stage === 'baby' ? 'Bayi' : fish.stage === 'juvenile' ? 'Remaja' : fish.stage === 'elderly' ? 'Tua' : 'Dewasa';
     // Hunger is a life-cycle stat; it's meaningless in Supabase mode (life cycle
