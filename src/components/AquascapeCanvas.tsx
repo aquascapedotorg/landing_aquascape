@@ -23,6 +23,7 @@ import {
 import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { normalizeName } from '../services/streakCalculations';
+import { getLegendaryNames } from '../services/legendaryService';
 import { ensureMascotSprite, getMascotSprite, getMascotAspect, getMascotParts } from './mascotImage';
 import { recordKuaciEaten, getStreakFor } from '../services/streakService';
 import { CommunalFishInput } from './aquascapeEvents';
@@ -121,6 +122,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
   const fishRef = useRef<FishParticle[]>([]);
   const bubblesRef = useRef<BubbleParticle[]>([]);
   const foodRef = useRef<FoodParticle[]>([]);
+  const legendaryTrailRef = useRef<Map<number, { x: number; y: number }[]>>(new Map());
   const plantsRef = useRef<PlantStem[]>([]);
   const ripplesRef = useRef<{ x: number; y: number; r: number; opacity: number }[]>([]);
   const mouseRef = useRef<{ x: number; y: number; isDown: boolean; active: boolean }>({
@@ -248,6 +250,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       }
 
       fishRef.current = fish;
+      tagLegendary(fishRef.current);
       setFishCount(fish.length);
     } else {
       // Canvas already has fish (e.g. Zen canvas whose density effect ran on mount
@@ -263,6 +266,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         );
       }
       adjustFishPositionsForResize(fishRef.current, width, height);
+      tagLegendary(fishRef.current);
       setFishCount(fishRef.current.length);
     }
 
@@ -376,6 +380,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       const h = rect.height > 0 ? rect.height : 500;
 
       fishRef.current = applyCommunalFishesToSchool(fishRef.current, communalList, w, h);
+      tagLegendary(fishRef.current);
       setFishCount(fishRef.current.length);
       aquascapeEvents.notifyFishRosterChanged();
     },
@@ -411,6 +416,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       aquascapeAudio.playBubblePop();
 
       fishRef.current.push(newFish);
+      tagLegendary(fishRef.current);
       setFishCount(fishRef.current.length);
       aquascapeEvents.notifyFishRosterChanged();
       return newFish;
@@ -437,6 +443,13 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       if (target === null || normalizeName(f.name) === target) {
         f.hovered = false;
       }
+    });
+  }, []);
+
+  const tagLegendary = useCallback((list: FishParticle[]) => {
+    const names = getLegendaryNames();
+    list.forEach((f) => {
+      f.isLegendary = f.isCommunal === true && names.has(normalizeName(f.name));
     });
   }, []);
 
@@ -488,6 +501,15 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     return () => unsubscribe();
   }, []);
 
+  // Re-tag legendary fish whenever the winner set changes.
+  useEffect(() => {
+    const unsub = aquascapeEvents.onLegendaryUpdated(() => {
+      tagLegendary(fishRef.current);
+      aquascapeEvents.notifyFishRosterChanged();
+    });
+    return () => unsub();
+  }, [tagLegendary]);
+
   // Dynamically synchronize fish population when density or active species change
   useEffect(() => {
     if (!containerRef.current) return;
@@ -538,6 +560,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       h,
       isSupabaseModeActive()
     );
+    tagLegendary(fishRef.current);
     setFishCount(fishRef.current.length);
     aquascapeEvents.notifyFishRosterChanged();
   }, [settings.fishDensity, settings.activeSpecies]);
@@ -1164,6 +1187,43 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         fish.angle = isFacingLeft ? Math.PI - pitch : pitch;
         fish.tailPhase += fish.tailSpeed * (0.8 + speed * 0.8);
 
+        // Legendary gold aura, sparkles, and a fading trail (behind the fish).
+        if (fish.isLegendary) {
+          let trail = legendaryTrailRef.current.get(fish.id);
+          if (!trail) { trail = []; legendaryTrailRef.current.set(fish.id, trail); }
+          trail.push({ x: fish.x, y: fish.y });
+          if (trail.length > 14) trail.shift();
+          for (let ti = 0; ti < trail.length; ti++) {
+            const p = trail[ti];
+            ctx.fillStyle = `rgba(255, 215, 0, ${(ti / trail.length) * 0.4})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2 + (ti / trail.length) * 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          const glowR = Math.max(34, fish.size * 1.9) * (0.9 + Math.sin(timeSec * 3) * 0.1);
+          const gg = ctx.createRadialGradient(fish.x, fish.y, 0, fish.x, fish.y, glowR);
+          gg.addColorStop(0, 'rgba(255, 215, 0, 0.5)');
+          gg.addColorStop(0.5, 'rgba(245, 197, 66, 0.22)');
+          gg.addColorStop(1, 'rgba(245, 197, 66, 0)');
+          ctx.save();
+          ctx.fillStyle = gg;
+          ctx.beginPath();
+          ctx.arc(fish.x, fish.y, glowR, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          for (let k = 0; k < 5; k++) {
+            const ang = (k / 5) * Math.PI * 2 + timeSec * 0.8;
+            const rad = fish.size * (1.1 + 0.25 * Math.sin(timeSec * 2 + k));
+            const tw = 0.5 + 0.5 * Math.sin(timeSec * 5 + k * 1.7);
+            ctx.fillStyle = `rgba(255, 243, 176, ${tw})`;
+            ctx.beginPath();
+            ctx.arc(fish.x + Math.cos(ang) * rad, fish.y + Math.sin(ang) * rad, 1.6 * tw + 0.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else if (legendaryTrailRef.current.has(fish.id)) {
+          legendaryTrailRef.current.delete(fish.id);
+        }
+
         // Highlight glow (hover) / spotlight (click, time-decayed) drawn behind fish.
         const isFocus = fish.highlightUntil !== undefined && fish.highlightUntil > Date.now();
         const isHighlight = fish.hovered === true || isFocus;
@@ -1206,7 +1266,55 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         // Tail wag sinusoidal calculation
         const tailWag = Math.sin(fish.tailPhase) * 0.28;
 
-        if (fish.type === 'mascot') {
+        if (fish.isLegendary) {
+          // --- LEGENDARY GOLD KOI (overrides the participant's normal species) ---
+          const L = fish.size * 1.15;
+          const Hh = L * 0.42;
+          ctx.save();
+          ctx.translate(-L * 0.42, 0);
+          ctx.rotate(tailWag * 1.2);
+          ctx.fillStyle = 'rgba(255, 215, 0, 0.85)';
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(-L * 0.35, -Hh * 0.9, -L * 0.55, -Hh * 0.5);
+          ctx.quadraticCurveTo(-L * 0.4, 0, -L * 0.55, Hh * 0.5);
+          ctx.quadraticCurveTo(-L * 0.35, Hh * 0.9, 0, 0);
+          ctx.fill();
+          ctx.restore();
+          const bg = ctx.createLinearGradient(0, -Hh, 0, Hh);
+          bg.addColorStop(0, '#fff3b0');
+          bg.addColorStop(0.5, '#f5c542');
+          bg.addColorStop(1, '#b8860b');
+          ctx.fillStyle = bg;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, L * 0.5, Hh, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+          ctx.beginPath();
+          ctx.moveTo(L * 0.05, -Hh);
+          ctx.quadraticCurveTo(-L * 0.1, -Hh * 1.8, -L * 0.25, -Hh * 0.9);
+          ctx.lineTo(-L * 0.1, -Hh * 0.7);
+          ctx.closePath();
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(L * 0.05, Hh);
+          ctx.quadraticCurveTo(-L * 0.1, Hh * 1.8, -L * 0.25, Hh * 0.9);
+          ctx.lineTo(-L * 0.1, Hh * 0.7);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+          ctx.beginPath();
+          ctx.ellipse(L * 0.1, -Hh * 0.2, L * 0.12, Hh * 0.35, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 140, 0, 0.35)';
+          ctx.beginPath();
+          ctx.ellipse(-L * 0.12, Hh * 0.15, L * 0.1, Hh * 0.3, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#3a2a00';
+          ctx.beginPath();
+          ctx.arc(L * 0.32, -Hh * 0.15, Math.max(1.5, L * 0.045), 0, Math.PI * 2);
+          ctx.fill();
+        } else if (fish.type === 'mascot') {
           const sprite = getMascotSprite();
           const parts = getMascotParts();
           if (parts) {
