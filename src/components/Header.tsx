@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AquascapeLogo } from './AquascapeLogo';
 import { Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
 import { aquascapeAudio } from './AquascapeAudio';
+import { ViewerCounter } from './ViewerCounter';
 
 interface HeaderProps {
   soundEnabled: boolean;
@@ -55,6 +56,9 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Navigation & Utilities */}
         <nav className="flex items-center gap-3 sm:gap-5">
+          {/* Realtime viewer count */}
+          <ViewerCounter />
+
           {/* Quick Sound Toggle in Header */}
           <button
             type="button"
