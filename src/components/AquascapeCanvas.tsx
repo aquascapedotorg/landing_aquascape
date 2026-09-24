@@ -617,27 +617,37 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     let animationFrameId: number;
     let lastTime = performance.now();
 
+    // Track the CSS size the canvas backing store is currently sized for, so the
+    // render loop can detect a mismatch (e.g. Zen opened after a stale first
+    // measurement) and re-sync WITHOUT waiting for a manual window resize.
+    let sizedForW = 0;
+    let sizedForH = 0;
+
+    // Size the canvas backing store to a given CSS size (accounting for DPR) and
+    // reset the transform. `reinit` rebuilds plants/fish for the new dimensions.
+    const applyCanvasSize = (cssW: number, cssH: number, reinit: boolean) => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      canvas.style.width = `${cssW}px`;
+      canvas.style.height = `${cssH}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sizedForW = cssW;
+      sizedForH = cssH;
+      if (reinit) initAquascape(cssW, cssH);
+    };
+
     // Handle Resize with DevicePixelRatio for crisp visuals
     const handleResize = () => {
       if (!containerRef.current || !canvas) return;
       const rect = containerRef.current.getBoundingClientRect();
       // If the container hasn't been laid out yet (width/height 0), retry next
-      // frame instead of sizing the canvas to 0 (which left a black strip when a
-      // flex parent measured width 0 before layout settled).
+      // frame instead of sizing the canvas to 0.
       if (rect.width < 1 || rect.height < 1) {
         requestAnimationFrame(handleResize);
         return;
       }
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
-      initAquascape(rect.width, rect.height);
+      applyCanvasSize(rect.width, rect.height, true);
     };
 
     handleResize();
@@ -645,6 +655,12 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
+    // Belt-and-braces: some browsers settle the fixed-modal layout a frame or two
+    // after mount, so ResizeObserver may report a stale size first. Re-measure on
+    // the next frames and window resizes too.
+    requestAnimationFrame(handleResize);
+    const onWinResize = () => handleResize();
+    window.addEventListener('resize', onWinResize);
 
     // Animation Loop
     const render = (currentTime: number) => {
@@ -661,6 +677,17 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         return;
       }
       const rect = containerRef.current.getBoundingClientRect();
+      // Self-heal: if the live container size no longer matches what the canvas
+      // backing store was sized for (e.g. Zen opened after a stale measurement),
+      // resize the canvas now instead of drawing into a wrongly-sized buffer that
+      // looks cropped until the user moves the window.
+      if (
+        rect.width >= 1 &&
+        rect.height >= 1 &&
+        (Math.abs(rect.width - sizedForW) > 1 || Math.abs(rect.height - sizedForH) > 1)
+      ) {
+        applyCanvasSize(rect.width, rect.height, sizedForW === 0 || sizedForH === 0);
+      }
       const w = rect.width;
       const h = rect.height;
 
@@ -1769,6 +1796,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
+      window.removeEventListener('resize', onWinResize);
       canvas.removeEventListener('click', handleCanvasClick);
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);

@@ -187,7 +187,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black text-white animate-fade-in overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black text-white animate-fade-in-plain overflow-hidden">
       {/* 1. Fullscreen Living Aquascape Simulation Canvas — absolutely filling the
           fixed modal so its width/height always match the viewport (a flex child
           could measure width 0 before layout settled, leaving a black strip). */}
