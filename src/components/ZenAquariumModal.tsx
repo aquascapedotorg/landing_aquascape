@@ -8,7 +8,7 @@ import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { subscribeToViewerCount } from '../services/presenceService';
 import { resolveLighting } from '../data/lightingUtils';
 import { getTodayLegendaryList } from '../services/legendaryService';
-import { hasPendingLegend } from '../services/legendaryPresence';
+import { shouldTeaseLegend } from '../services/legendaryPresence';
 import { LegendaryKoiSilhouette } from './LegendaryKoiSilhouette';
 import { aquascapeEvents } from './aquascapeEvents';
 import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff, Fish, Sparkles } from 'lucide-react';
@@ -111,25 +111,20 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
     };
   }, [isOpen]);
 
-  // A legend has been chosen today but its koi has NOT appeared on the canvas yet
-  // (its communal_fishes row hasn't been spawned). While that gap exists we show a
-  // dimmed golden koi silhouette hint ("Legend Incoming"). Recomputed whenever the
-  // legendary list changes OR the fish roster changes (a spawn may close the gap).
-  const [pendingLegend, setPendingLegend] = useState(false);
+  // No legend has been born yet TODAY. While that's true we show a dimmed golden
+  // koi silhouette teaser ("Legend Incoming") — an invitation while the day's
+  // legend has not appeared. It disappears once the first legend of the day is
+  // chosen (then the real gold koi takes over). Recomputed on legendary updates.
+  const [teaseLegend, setTeaseLegend] = useState(false);
   useEffect(() => {
     if (!isOpen) return;
-    const update = () => {
-      const canvasNames = aquascapeEvents.getFishList().map((f) => f.name);
-      setPendingLegend(hasPendingLegend(getTodayLegendaryList(), canvasNames));
-    };
+    const update = () => setTeaseLegend(shouldTeaseLegend(getTodayLegendaryList()));
     update();
     const settle = setTimeout(update, 400);
-    const unsubLegendary = aquascapeEvents.onLegendaryUpdated(update);
-    const unsubRoster = aquascapeEvents.onFishRosterChanged(update);
+    const unsub = aquascapeEvents.onLegendaryUpdated(update);
     return () => {
       clearTimeout(settle);
-      unsubLegendary();
-      unsubRoster();
+      unsub();
     };
   }, [isOpen]);
 
@@ -336,15 +331,12 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
           </div>
         )}
 
-        {/* "Legend Incoming" hint: a chosen legend today whose koi hasn't
-            appeared on the canvas yet. Shows a dimmed golden koi silhouette.
-            Supabase-only (list is empty otherwise); hidden in clean mode. */}
-        {!cleanMode && supabaseMode && pendingLegend && (
-          <div
-            className={`absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none ${
-              legendaryName ? 'top-36' : 'top-20'
-            }`}
-          >
+        {/* "Legend Incoming" teaser: no legend has been born yet today. Shows a
+            dimmed golden koi silhouette as an invitation until the day's first
+            legend appears. Supabase-only (list is empty otherwise); hidden in
+            clean mode and once a legend exists (teaseLegend goes false). */}
+        {!cleanMode && supabaseMode && teaseLegend && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
             <div className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-amber-300/40 bg-gradient-to-r from-amber-950/60 via-yellow-900/40 to-amber-950/60 backdrop-blur-md shadow-[0_0_16px_rgba(255,215,0,0.2)]">
               <LegendaryKoiSilhouette size={40} />
               <div className="leading-tight">
@@ -352,7 +344,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
                   Legend Incoming
                 </p>
                 <p className="text-[10px] text-amber-300/70 font-mono">
-                  Menanti kedatangan sang koi legendaris
+                  Sang koi legendaris belum lahir hari ini
                 </p>
               </div>
             </div>
