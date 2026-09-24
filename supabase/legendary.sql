@@ -26,7 +26,16 @@ create policy "Allow public read access"
   on public.legendary_fish for select using (true);
 -- No public insert/update/delete: writes happen only via the SECURITY DEFINER RPC.
 
+-- Enforce AT MOST ONE legendary per day at the DB level (final safety net against
+-- races where two fish win near-simultaneously). The partial unique index makes a
+-- second insert for the same entry_date fail, which the RPC catches.
+create unique index if not exists uniq_legendary_one_per_day
+  on public.legendary_fish (entry_date);
+
 -- Ultra-rare, idempotent, atomic roll. Returns true if this call won.
+-- LIMIT: at most one legendary per calendar day. Once today already has a winner,
+-- further fish are still marked as rolled (odds stay ~1% per fish) but can no
+-- longer win, so exactly one legend exists per day.
 create or replace function public.roll_legendary(p_name text)
 returns boolean
 language plpgsql security definer as $$
@@ -34,6 +43,7 @@ declare
   v_name text := btrim(regexp_replace(coalesce(p_name,''), '\s+', ' ', 'g'));
   v_row  public.communal_fishes;
   v_win  boolean := false;
+  v_has_today boolean;
 begin
   if char_length(v_name) < 1 then return false; end if;
 
@@ -52,10 +62,24 @@ begin
 
   update public.communal_fishes set legendary_rolled = true where id = v_row.id;
 
+  -- Only one legendary per day: if today already has a winner, this fish cannot win.
+  select exists(
+    select 1 from public.legendary_fish where entry_date = current_date
+  ) into v_has_today;
+  if v_has_today then
+    return false;
+  end if;
+
   if random() < 0.01 then
-    v_win := true;
-    insert into public.legendary_fish (name, species, entry_date)
-    values (v_name, v_row.species, current_date);
+    -- The unique index is the atomic guard: if a concurrent roll inserted first,
+    -- this insert violates it and we treat this fish as a non-winner.
+    begin
+      insert into public.legendary_fish (name, species, entry_date)
+      values (v_name, v_row.species, current_date);
+      v_win := true;
+    exception when unique_violation then
+      v_win := false;
+    end;
   end if;
 
   return v_win;
