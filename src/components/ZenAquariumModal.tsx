@@ -336,7 +336,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
             legend appears. Supabase-only (list is empty otherwise); hidden in
             clean mode and once a legend exists (teaseLegend goes false). */}
         {!cleanMode && supabaseMode && teaseLegend && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <div className="absolute bottom-44 left-4 pointer-events-none" style={{ zIndex: 55 }}>
             <div className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-amber-300/40 bg-gradient-to-r from-amber-950/60 via-yellow-900/40 to-amber-950/60 backdrop-blur-md shadow-[0_0_16px_rgba(255,215,0,0.2)]">
               <LegendaryKoiSilhouette size={40} />
               <div className="leading-tight">
@@ -344,7 +344,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
                   Legend Incoming
                 </p>
                 <p className="text-[10px] text-amber-300/70 font-mono">
-                  Sang koi legendaris belum lahir hari ini
+                  Who will be legend today?
                 </p>
               </div>
             </div>
