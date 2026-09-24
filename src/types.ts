@@ -16,7 +16,7 @@ export interface ReposData {
   repos: RepoItem[];
 }
 
-export type LightingMode = 'daylight' | 'moonlight' | 'golden';
+export type LightingMode = 'daylight' | 'moonlight' | 'golden' | 'auto';
 
 export interface AquascapeSettings {
   lighting: LightingMode;

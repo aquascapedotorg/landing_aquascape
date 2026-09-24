@@ -24,6 +24,7 @@ import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { normalizeName } from '../services/streakCalculations';
 import { getLegendaryNames } from '../services/legendaryService';
+import { resolveLighting } from '../data/lightingUtils';
 import { ensureMascotSprite, getMascotSprite, getMascotAspect, getMascotParts } from './mascotImage';
 import { recordKuaciEaten, getStreakFor } from '../services/streakService';
 import { CommunalFishInput } from './aquascapeEvents';
@@ -631,14 +632,16 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
       // -------------------------------------------------------------
       // 1. Draw Underwater Backdrop & Lighting Modes
       // -------------------------------------------------------------
+      // Resolve 'auto' to a concrete mode based on the real local time of day.
+      const lighting = resolveLighting(currentSettings.lighting);
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-      if (currentSettings.lighting === 'daylight') {
+      if (lighting === 'daylight') {
         // Natural ADA Style planted aquarium daylight
         bgGrad.addColorStop(0, '#0a233a');
         bgGrad.addColorStop(0.35, '#0d3246');
         bgGrad.addColorStop(0.75, '#0b2633');
         bgGrad.addColorStop(1, '#06131c');
-      } else if (currentSettings.lighting === 'moonlight') {
+      } else if (lighting === 'moonlight') {
         // Deep bioluminescent twilight moonlight
         bgGrad.addColorStop(0, '#040b17');
         bgGrad.addColorStop(0.4, '#07162b');
@@ -666,9 +669,9 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
         const rayGrad = ctx.createLinearGradient(rayOffset, 0, rayOffset + 40, h);
         const rayColor =
-          currentSettings.lighting === 'daylight'
+          lighting === 'daylight'
             ? 'rgba(56, 189, 176, '
-            : currentSettings.lighting === 'moonlight'
+            : lighting === 'moonlight'
             ? 'rgba(96, 165, 250, '
             : 'rgba(251, 191, 36, ';
 

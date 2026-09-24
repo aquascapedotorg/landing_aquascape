@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "name": "AQUASCAPE Zen Aquarium Configuration",
   "defaults": {
-    "lighting": "daylight",
+    "lighting": "auto",
     "co2Active": true,
     "waterFlow": "normal",
     "soundEnabled": false,

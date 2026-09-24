@@ -1,5 +1,5 @@
 import rawZenConfig from '../../public/zen-config.json';
-import { FishSpeciesType } from '../types';
+import { FishSpeciesType, LightingMode } from '../types';
 
 export interface ZenPreset {
   id: string;
@@ -12,7 +12,7 @@ export interface ZenConfigData {
   version: string;
   name: string;
   defaults: {
-    lighting: 'daylight' | 'moonlight' | 'golden';
+    lighting: LightingMode;
     co2Active: boolean;
     waterFlow: 'calm' | 'normal' | 'lively';
     soundEnabled: boolean;
@@ -36,7 +36,7 @@ export const ZEN_CONFIG: ZenConfigData = {
   defaults: {
     ...rawZenConfig.defaults,
     activeSpecies: rawZenConfig.defaults.activeSpecies as FishSpeciesType[],
-    lighting: rawZenConfig.defaults.lighting as 'daylight' | 'moonlight' | 'golden',
+    lighting: rawZenConfig.defaults.lighting as LightingMode,
     waterFlow: rawZenConfig.defaults.waterFlow as 'calm' | 'normal' | 'lively',
   },
   telemetry: rawZenConfig.telemetry,

@@ -5,6 +5,7 @@ import { FishCustomizerModal } from './FishCustomizerModal';
 import { StreakLeaderboardDrawer } from './StreakLeaderboardDrawer';
 import { AquascapeSettings } from '../types';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
+import { resolveLighting } from '../data/lightingUtils';
 import { getTodayLegendaryList } from '../services/legendaryService';
 import { aquascapeEvents } from './aquascapeEvents';
 import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff, Fish, Sparkles } from 'lucide-react';
@@ -25,8 +26,8 @@ interface Telemetry {
 function computeTelemetry(settings: AquascapeSettings): Telemetry {
   const jitter = (spread: number) => (Math.random() - 0.5) * 2 * spread;
 
-  const baseTemp =
-    settings.lighting === 'daylight' ? 25.2 : settings.lighting === 'moonlight' ? 24.2 : 24.8;
+  const lighting = resolveLighting(settings.lighting);
+  const baseTemp = lighting === 'daylight' ? 25.2 : lighting === 'moonlight' ? 24.2 : 24.8;
   const temp = baseTemp + jitter(0.3);
 
   const baseCo2 = settings.co2Active ? 28 : 12;

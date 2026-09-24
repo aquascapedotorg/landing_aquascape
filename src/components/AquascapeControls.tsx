@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, Sunset, Layers, Wind, Volume2, VolumeX, Maximize2, Minimize2, Fish } from 'lucide-react';
+import { Sun, Moon, Sunset, Layers, Wind, Volume2, VolumeX, Maximize2, Minimize2, Fish, Clock } from 'lucide-react';
 import { AquascapeSettings, LightingMode } from '../types';
 import { aquascapeAudio } from './AquascapeAudio';
 import { KuaciIcon } from './KuaciIcon';
@@ -54,6 +54,21 @@ export const AquascapeControls: React.FC<ControlsProps> = ({
 
       {/* 2. Lighting Mode Switcher */}
       <div className="flex items-center rounded-xl bg-slate-900/60 p-0.5 border border-slate-700/60">
+        <button
+          type="button"
+          id="btn-light-auto"
+          onClick={() => handleLightingChange('auto')}
+          className={`flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-lg transition-all cursor-pointer ${
+            settings.lighting === 'auto'
+              ? 'bg-teal-500/30 text-teal-200 shadow-sm border border-teal-500/30 font-semibold'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+          title="Pencahayaan Otomatis mengikuti waktu setempat"
+        >
+          <Clock className="w-3 h-3 text-teal-300" />
+          <span className="hidden md:inline">Auto</span>
+        </button>
+
         <button
           type="button"
           id="btn-light-day"
