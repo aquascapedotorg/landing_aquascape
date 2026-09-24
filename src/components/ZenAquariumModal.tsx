@@ -5,8 +5,9 @@ import { FishCustomizerModal } from './FishCustomizerModal';
 import { StreakLeaderboardDrawer } from './StreakLeaderboardDrawer';
 import { AquascapeSettings } from '../types';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
+import { getTodayLegendaryList } from '../services/legendaryService';
 import { aquascapeEvents } from './aquascapeEvents';
-import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff, Fish } from 'lucide-react';
+import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff, Fish, Sparkles } from 'lucide-react';
 
 interface Telemetry {
   temperature: string;
@@ -78,6 +79,22 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
     return () => {
       clearTimeout(settle);
       unsubscribe();
+    };
+  }, [isOpen]);
+
+  const [legendaryName, setLegendaryName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const update = () => {
+      const list = getTodayLegendaryList();
+      setLegendaryName(list.length > 0 ? list[list.length - 1].name : null);
+    };
+    update();
+    const settle = setTimeout(update, 400);
+    const unsub = aquascapeEvents.onLegendaryUpdated(update);
+    return () => {
+      clearTimeout(settle);
+      unsub();
     };
   }, [isOpen]);
 
@@ -244,6 +261,22 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
             </button>
           </div>
         </div>
+        )}
+
+        {/* Legendary announcement banner (Supabase-only, hidden in clean mode) */}
+        {!cleanMode && supabaseMode && legendaryName && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl border border-amber-300/60 bg-gradient-to-r from-amber-950/80 via-yellow-900/70 to-amber-950/80 backdrop-blur-md shadow-[0_0_20px_rgba(255,215,0,0.35)]">
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <div className="leading-tight">
+                <p className="text-sm font-bold text-amber-200 tracking-wide">
+                  {legendaryName} — Shining Gold, Chosen Today
+                </p>
+                <p className="text-[10px] text-amber-300/80 font-mono">Aquascape Legend</p>
+              </div>
+              <Sparkles className="w-4 h-4 text-amber-300" />
+            </div>
+          </div>
         )}
 
         {/* Floating Bottom Aquascape Controls */}
