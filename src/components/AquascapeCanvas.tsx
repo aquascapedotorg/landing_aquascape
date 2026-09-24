@@ -23,7 +23,7 @@ import {
 import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { normalizeName } from '../services/streakCalculations';
-import { ensureMascotSprite, getMascotSprite, getMascotAspect } from './mascotImage';
+import { ensureMascotSprite, getMascotSprite, getMascotAspect, getMascotParts } from './mascotImage';
 import { recordKuaciEaten, getStreakFor } from '../services/streakService';
 import { CommunalFishInput } from './aquascapeEvents';
 import {
@@ -1208,37 +1208,51 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
 
         if (fish.type === 'mascot') {
           const sprite = getMascotSprite();
-          if (sprite) {
-            // --- LOGO SPRITE MASCOT (pixel-identical to the brand logo) ---
-            // The sprite is a static bitmap, so make it feel alive with layered
-            // procedural motion instead of a single stiff rotation:
-            //   - swim phase drives a gentle body wave and squash/stretch
-            //   - vertical velocity banks the fish so turns read naturally
-            // The sprite faces +X; the outer horizontal flip handles leftward swim.
+          const parts = getMascotParts();
+          if (parts) {
+            // --- LOGO MASCOT with an independently FLAPPING TAIL ---
+            // Body stays as the logo; the tail piece rotates at its joint so the
+            // fish actually swishes like a real fish. Sprite faces +X; the outer
+            // flip handles leftward swimming.
+            const drawH = fish.size * 1.6;
+            const drawW = drawH * (parts.width / parts.height);
+            const s = drawW / parts.width; // sprite px -> world px scale
+            const t = timeSec * 4 + fish.id;
+
+            // Gentle whole-body life: bob + slight bank on vertical turns.
+            const bob = Math.sin(t) * (fish.size * 0.06);
+            const bank = Math.max(-0.22, Math.min(0.22, fish.vy * 0.12));
+            ctx.translate(0, bob);
+            ctx.rotate(bank);
+            ctx.imageSmoothingEnabled = true;
+
+            // Origin currently at the fish center; sprite's own center is (w/2,h/2).
+            // Draw offset so the sprite is centered.
+            const ox = -parts.width * 0.5 * s;
+            const oy = -parts.height * 0.5 * s;
+
+            // Tail: rotate around the joint (splitX, vertical middle).
+            const jointX = ox + parts.splitX * s;
+            const jointY = oy + parts.height * 0.5 * s;
+            const wag = Math.sin(t) * 0.22; // radians — lively but no joint gap
+            ctx.save();
+            ctx.translate(jointX, jointY);
+            ctx.rotate(wag);
+            ctx.translate(-jointX, -jointY);
+            ctx.drawImage(parts.tail, ox, oy, parts.width * s, parts.height * s);
+            ctx.restore();
+
+            // Body on top (static, the recognizable logo).
+            ctx.drawImage(parts.body, ox, oy, parts.width * s, parts.height * s);
+          } else if (sprite) {
+            // Fallback: whole sprite with light procedural motion (before split ready).
             const baseH = fish.size * 1.6;
             const baseW = baseH * getMascotAspect();
-            // Drive the motion off the animation clock (fast, steady) plus a
-            // per-fish offset, layering several frequencies so it reads as an
-            // organic swim rather than a metronome. id offset desyncs multiples.
             const t = timeSec * 3.2 + fish.id;
-            // Bobbing: clear vertical undulation.
-            const bob = Math.sin(t) * (fish.size * 0.14);
-            // Roll: soft rocking synced to the stroke (bigger than before).
-            const roll = Math.sin(t) * 0.16;
-            // Yaw-ish sway: a second, slower wave for a "wagging" feel.
-            const sway = Math.sin(t * 0.5 + 1.3) * 0.1;
-            // Banking: lean toward the direction of vertical travel.
-            const bank = Math.max(-0.3, Math.min(0.3, fish.vy * 0.14));
-            // Squash & stretch: body lengthens/shortens with the tail beat.
-            const stretch = 1 + Math.sin(t * 2) * 0.08;
-            const squash = 1 - Math.sin(t * 2) * 0.08;
-
-            ctx.translate(0, bob);
-            ctx.rotate(bank + roll + sway);
+            ctx.translate(0, Math.sin(t) * (fish.size * 0.1));
+            ctx.rotate(Math.sin(t) * 0.12);
             ctx.imageSmoothingEnabled = true;
-            const drawW = baseW * stretch;
-            const drawH = baseH * squash;
-            ctx.drawImage(sprite, -drawW / 2, -drawH / 2, drawW, drawH);
+            ctx.drawImage(sprite, -baseW / 2, -baseH / 2, baseW, baseH);
           } else {
           // --- AQUASCAPE MASCOT ORIGAMI FISH (fallback until sprite loads) ---
           // Faceted origami fish facing +X: a sharp diamond head with an eye, a
