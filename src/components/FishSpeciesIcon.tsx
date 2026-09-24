@@ -17,6 +17,12 @@ const SPECIES_COLOR: Record<FishSpeciesType, string> = {
   pufferfish: '#f59e0b',
   orca: '#e2e8f0',
   turtle: '#22c55e',
+  marlin: '#2f6591',
+  anglerfish: '#8b5cf6',
+  lanternfish: '#5eead4',
+  viperfish: '#38bdf8',
+  moray: '#3a6b52',
+  electricEel: '#e8c65a',
 };
 
 // A simple, distinct silhouette per species drawn in a 24x24 viewBox. Bodies are
@@ -106,6 +112,63 @@ function shapeFor(species: FishSpeciesType, color: string): React.ReactNode {
           <path d="M18 12 l-6 -6 l-8 6 l8 6 z" fill={color} />
           {tail(4, 4, 5)}
           <circle cx="12" cy="10" r="1" fill="#ffffff" />
+        </>
+      );
+    case 'marlin':
+      return (
+        <>
+          <line x1="18" y1="12" x2="23" y2="11" stroke={color} strokeWidth="1.2" />
+          <path d="M10 8 l2 -5 l3 6 z" fill={color} />
+          <ellipse cx="11" cy="12" rx="8" ry="3.5" fill={color} />
+          {tail(3, 4, 4)}
+          <circle cx="16" cy="11" r="1" fill="#0a121d" />
+        </>
+      );
+    case 'anglerfish':
+      return (
+        <>
+          <path d="M9 6 q6 -4 8 1" stroke={color} strokeWidth="1" fill="none" />
+          <circle cx="17" cy="7" r="1.6" fill="#96e6ff" />
+          <ellipse cx="11" cy="13" rx="8" ry="7" fill={color} />
+          <path d="M15 12 q-6 -1 -9 2 q5 4 9 2 z" fill="#0a0710" />
+          <circle cx="12" cy="10" r="1" fill="#cfefff" />
+        </>
+      );
+    case 'lanternfish':
+      return (
+        <>
+          <ellipse cx="12" cy="12" rx="7" ry="4" fill={color} />
+          {tail(5, 3, 3)}
+          <circle cx="16" cy="11" r="1.6" fill="#ddffff" />
+          <circle cx="16" cy="11" r="0.7" fill="#0a1a20" />
+          <circle cx="10" cy="15" r="0.8" fill="#aef4d0" />
+          <circle cx="13" cy="15" r="0.8" fill="#aef4d0" />
+          <circle cx="7" cy="15" r="0.8" fill="#aef4d0" />
+        </>
+      );
+    case 'viperfish':
+      return (
+        <>
+          <circle cx="9" cy="5" r="1.4" fill="#96e6ff" />
+          <ellipse cx="12" cy="12" rx="8" ry="3.5" fill={color} />
+          <path d="M18 11 l-2 3 l-1 -3 z" fill="#eef5fb" />
+          {tail(4, 4, 4)}
+          <circle cx="16" cy="11" r="1" fill="#0a121d" />
+        </>
+      );
+    case 'moray':
+      return (
+        <>
+          <path d="M3 14 q4 -6 9 -5 q6 1 9 -3" stroke={color} strokeWidth="4" fill="none" strokeLinecap="round" />
+          <circle cx="20" cy="7" r="1" fill="#0c1a12" />
+        </>
+      );
+    case 'electricEel':
+      return (
+        <>
+          <path d="M3 14 q4 -6 9 -5 q6 1 9 -3" stroke={color} strokeWidth="4" fill="none" strokeLinecap="round" />
+          <path d="M9 6 l1 -3 l1 2 l1 -2" stroke="#96e6ff" strokeWidth="1" fill="none" />
+          <circle cx="20" cy="7" r="1" fill="#0c1a20" />
         </>
       );
     case 'rasbora':

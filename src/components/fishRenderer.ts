@@ -353,6 +353,156 @@ function buildRawFish(
       ageSec: 30,
       fadeOpacity: 1.0,
     };
+  } else if (species === 'marlin') {
+    const size = 40 + Math.random() * 6;
+    return {
+      id,
+      name: getFishName('marlin', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.25 + Math.random() * (height * 0.4),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (1.6 + Math.random() * 0.6),
+      vy: (Math.random() - 0.5) * 0.2,
+      size,
+      baseSize: size,
+      type: 'marlin',
+      color: '#2f6591',
+      secondaryColor: '#bfe0f2',
+      accentColor: '#20496e',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.2,
+      hunger: 20,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'anglerfish') {
+    const size = 34 + Math.random() * 6;
+    return {
+      id,
+      name: getFishName('anglerfish', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.35 + Math.random() * (height * 0.45),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random() * 0.25),
+      vy: (Math.random() - 0.5) * 0.15,
+      size,
+      baseSize: size,
+      type: 'anglerfish',
+      color: '#241f2e',
+      secondaryColor: '#332b40',
+      accentColor: '#96e6ff',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.12,
+      hunger: 20,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'lanternfish') {
+    const size = 18 + Math.random() * 4;
+    return {
+      id,
+      name: getFishName('lanternfish', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.3 + Math.random() * (height * 0.5),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.7 + Math.random() * 0.4),
+      vy: (Math.random() - 0.5) * 0.25,
+      size,
+      baseSize: size,
+      type: 'lanternfish',
+      color: '#2b3a44',
+      secondaryColor: '#3d5560',
+      accentColor: '#aef4d0',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.2,
+      hunger: 15,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 25,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'viperfish') {
+    const size = 30 + Math.random() * 6;
+    return {
+      id,
+      name: getFishName('viperfish', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.35 + Math.random() * (height * 0.45),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.4),
+      vy: (Math.random() - 0.5) * 0.2,
+      size,
+      baseSize: size,
+      type: 'viperfish',
+      color: '#1d2933',
+      secondaryColor: '#31424f',
+      accentColor: '#9fe8ff',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.16,
+      hunger: 20,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'moray') {
+    const size = 34 + Math.random() * 6;
+    return {
+      id,
+      name: getFishName('moray', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.4 + Math.random() * (height * 0.4),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.25),
+      vy: (Math.random() - 0.5) * 0.15,
+      size,
+      baseSize: size,
+      type: 'moray',
+      color: '#3a6b52',
+      secondaryColor: '#bfe6c8',
+      accentColor: '#2f5a4a',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.14,
+      hunger: 20,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
+  } else if (species === 'electricEel') {
+    const size = 36 + Math.random() * 6;
+    return {
+      id,
+      name: getFishName('electricEel', usedNames),
+      x: width * 0.2 + Math.random() * (width * 0.6),
+      y: height * 0.4 + Math.random() * (height * 0.4),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.25),
+      vy: (Math.random() - 0.5) * 0.15,
+      size,
+      baseSize: size,
+      type: 'electricEel',
+      color: '#3a4a52',
+      secondaryColor: '#e8c65a',
+      accentColor: '#96e6ff',
+      angle: 0,
+      tailPhase: Math.random() * Math.PI * 2,
+      tailSpeed: 0.14,
+      hunger: 20,
+      eatenCount: 0,
+      stage: 'adult',
+      growthPoints: 5,
+      ageSec: 30,
+      fadeOpacity: 1.0,
+    };
   } else {
     const size = 22;
     return {
@@ -400,6 +550,12 @@ export function createFishSchool(
     'pufferfish',
     'orca',
     'turtle',
+    'marlin',
+    'anglerfish',
+    'lanternfish',
+    'viperfish',
+    'moray',
+    'electricEel',
   ],
   supabaseMode: boolean = false
 ): FishParticle[] {
@@ -431,6 +587,12 @@ export function createFishSchool(
           'pufferfish',
           'orca',
           'turtle',
+          'marlin',
+          'anglerfish',
+          'lanternfish',
+          'viperfish',
+          'moray',
+          'electricEel',
         ] as FishSpeciesType[]);
 
   let idCounter = 1;
@@ -1684,4 +1846,452 @@ export function getFishOrientation(vx: number, vy: number): {
   const pitch = Math.max(-maxPitch, Math.min(maxPitch, rawPitch));
 
   return { isFacingLeft, pitch };
+}
+
+// ---------------------------------------------------------------------------
+// NEW DEEP-SEA SPECIES
+// Caller has already translated origin to the fish center and flipped for
+// facing direction, like the other draw* functions. Body faces +X (right).
+// ---------------------------------------------------------------------------
+
+/** Marlin — streamlined pelagic with a long bill and tall dorsal sail. */
+export function drawMarlin(ctx: CanvasRenderingContext2D, fish: FishParticle, tailWag: number): void {
+  ctx.save();
+  ctx.scale(fish.size / 40, fish.size / 40);
+
+  ctx.strokeStyle = '#1b3a5b';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(38, -1);
+  ctx.lineTo(70, -3);
+  ctx.stroke();
+
+  ctx.fillStyle = '#20496e';
+  ctx.beginPath();
+  ctx.moveTo(6, -9);
+  ctx.quadraticCurveTo(2, -34, -14, -30);
+  ctx.quadraticCurveTo(-6, -14, -16, -9);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#2f6591';
+  ctx.beginPath();
+  ctx.moveTo(40, -1);
+  ctx.quadraticCurveTo(10, -15, -24, -8);
+  ctx.lineTo(-36, 0);
+  ctx.quadraticCurveTo(-12, 12, 10, 7);
+  ctx.quadraticCurveTo(30, 4, 40, -1);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#bfe0f2';
+  ctx.beginPath();
+  ctx.moveTo(30, 3);
+  ctx.quadraticCurveTo(0, 9, -26, 2);
+  ctx.quadraticCurveTo(-10, 11, 10, 7);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#1b3a5b';
+  ctx.beginPath();
+  ctx.moveTo(6, 5);
+  ctx.lineTo(-6, 20);
+  ctx.lineTo(2, 6);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#08131d';
+  ctx.beginPath();
+  ctx.arc(26, -3, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(-36, 0);
+  ctx.rotate(tailWag * 1.2);
+  ctx.fillStyle = '#20496e';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-16, -14);
+  ctx.lineTo(-10, 0);
+  ctx.lineTo(-16, 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/** Anglerfish — dark round body, glowing lure, big toothy jaw. */
+export function drawAnglerfish(ctx: CanvasRenderingContext2D, fish: FishParticle, tailWag: number): void {
+  ctx.save();
+  ctx.scale(fish.size / 40, fish.size / 40);
+  const pulse = 0.6 + 0.4 * Math.sin(fish.tailPhase * 2);
+
+  ctx.strokeStyle = '#20303a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-2, -14);
+  ctx.quadraticCurveTo(18, -34, 26, -20);
+  ctx.stroke();
+
+  const glow = ctx.createRadialGradient(26, -20, 0, 26, -20, 14 * pulse);
+  glow.addColorStop(0, 'rgba(150, 230, 255, ' + 0.6 * pulse + ')');
+  glow.addColorStop(1, 'rgba(150, 230, 255, 0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(26, -20, 14 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#bfefff';
+  ctx.beginPath();
+  ctx.arc(26, -20, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#241f2e';
+  ctx.beginPath();
+  ctx.ellipse(-2, 2, 26, 20, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#332b40';
+  ctx.beginPath();
+  ctx.ellipse(2, 4, 20, 15, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#0a0710';
+  ctx.beginPath();
+  ctx.moveTo(22, 2);
+  ctx.quadraticCurveTo(2, -2, -16, 4);
+  ctx.quadraticCurveTo(2, 18, 22, 12);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#e8eef5';
+  for (let i = 0; i < 6; i++) {
+    const x = 18 - i * 6;
+    ctx.beginPath();
+    ctx.moveTo(x, 5);
+    ctx.lineTo(x - 2, 9);
+    ctx.lineTo(x + 2, 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x, 11);
+    ctx.lineTo(x - 2, 7);
+    ctx.lineTo(x + 2, 7);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#cfefff';
+  ctx.beginPath();
+  ctx.arc(14, -6, 2.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(14, -6, 1, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(-26, 2);
+  ctx.rotate(tailWag);
+  ctx.fillStyle = '#241f2e';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-12, -10);
+  ctx.lineTo(-8, 0);
+  ctx.lineTo(-12, 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/** Lanternfish — small, big-eyed, photophore dots along the belly. */
+export function drawLanternfish(ctx: CanvasRenderingContext2D, fish: FishParticle, tailWag: number): void {
+  ctx.save();
+  ctx.scale(fish.size / 22, fish.size / 22);
+
+  for (let i = 0; i < 5; i++) {
+    const px = 6 - i * 4;
+    const g = ctx.createRadialGradient(px, 9, 0, px, 9, 6 * (0.6 + 0.4 * Math.sin(fish.tailPhase + i)));
+    g.addColorStop(0, 'rgba(120, 220, 180, 0.6)');
+    g.addColorStop(1, 'rgba(120, 220, 180, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(px, 9, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#2b3a44';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 22, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#3d5560';
+  ctx.beginPath();
+  ctx.ellipse(2, -1, 17, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#22303a';
+  ctx.beginPath();
+  ctx.moveTo(2, -8);
+  ctx.lineTo(-6, -15);
+  ctx.lineTo(-10, -7);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#ddffff';
+  ctx.beginPath();
+  ctx.arc(14, -2, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#0a1a20';
+  ctx.beginPath();
+  ctx.arc(15, -2, 1.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#aef4d0';
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.arc(6 - i * 4, 9, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.save();
+  ctx.translate(-22, 0);
+  ctx.rotate(tailWag);
+  ctx.fillStyle = '#2b3a44';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-10, -8);
+  ctx.lineTo(-6, 0);
+  ctx.lineTo(-10, 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/** Viperfish — slender, huge fangs, lure and belly photophores. */
+export function drawViperfish(ctx: CanvasRenderingContext2D, fish: FishParticle, tailWag: number): void {
+  ctx.save();
+  ctx.scale(fish.size / 36, fish.size / 36);
+  const pulse = 0.6 + 0.4 * Math.sin(fish.tailPhase * 2);
+
+  const glow = ctx.createRadialGradient(-6, -24, 0, -6, -24, 16 * pulse);
+  glow.addColorStop(0, 'rgba(150, 230, 255, ' + 0.5 * pulse + ')');
+  glow.addColorStop(1, 'rgba(150, 230, 255, 0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(-6, -24, 16 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#25303a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-2, -8);
+  ctx.lineTo(-6, -24);
+  ctx.stroke();
+
+  ctx.fillStyle = '#1d2933';
+  ctx.beginPath();
+  ctx.moveTo(30, -2);
+  ctx.quadraticCurveTo(6, -12, -26, -6);
+  ctx.lineTo(-36, 0);
+  ctx.quadraticCurveTo(-14, 10, 8, 6);
+  ctx.quadraticCurveTo(24, 3, 30, -2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#31424f';
+  ctx.beginPath();
+  ctx.ellipse(-2, 0, 20, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#0a1016';
+  ctx.beginPath();
+  ctx.moveTo(30, -2);
+  ctx.quadraticCurveTo(16, -8, 6, -1);
+  ctx.quadraticCurveTo(16, 6, 30, 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#eef5fb';
+  for (let i = 0; i < 5; i++) {
+    const x = 26 - i * 5;
+    ctx.beginPath();
+    ctx.moveTo(x, -1);
+    ctx.lineTo(x - 1.5, 4);
+    ctx.lineTo(x + 1.5, 4);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#9fe8ff';
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.arc(0 - i * 8, 6, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#cfefff';
+  ctx.beginPath();
+  ctx.arc(20, -3, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(20, -3, 0.9, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(-36, 0);
+  ctx.rotate(tailWag);
+  ctx.fillStyle = '#1d2933';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-14, -11);
+  ctx.lineTo(-9, 0);
+  ctx.lineTo(-14, 11);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/** Builds sinuous segments for an eel body along a sine wave. Head at +X (right). */
+function eelSegments(
+  phase: number,
+  amp: number,
+  segs: number,
+  len: number,
+  thick: number
+): Array<[number, number, number]> {
+  const pts: Array<[number, number, number]> = [];
+  for (let i = 0; i <= segs; i++) {
+    const p = i / segs;
+    const x = (0.5 - p) * len;
+    const y = Math.sin(phase - p * 6) * amp * (0.3 + p * 0.9);
+    pts.push([x, y, thick * (1 - p * 0.75)]);
+  }
+  return pts;
+}
+
+function eelRibbon(
+  ctx: CanvasRenderingContext2D,
+  pts: Array<[number, number, number]>,
+  fill: string
+): void {
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1] - pts[0][2]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1] - pts[i][2]);
+  for (let i = pts.length - 1; i >= 0; i--) ctx.lineTo(pts[i][0], pts[i][1] + pts[i][2]);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** Moray eel — long sinuous green body, small toothy head, spotted skin. */
+export function drawMoray(ctx: CanvasRenderingContext2D, fish: FishParticle, _tailWag: number): void {
+  ctx.save();
+  ctx.scale(fish.size / 40, fish.size / 40);
+  const pts = eelSegments(fish.tailPhase, 10, 22, 88, 6);
+
+  eelRibbon(ctx, pts.map(([x, y, t]) => [x, y - t - 2, 1.4] as [number, number, number]), '#2f5a4a');
+  eelRibbon(ctx, pts, '#3a6b52');
+  eelRibbon(ctx, pts.map(([x, y, t]) => [x, y + t * 0.4, t * 0.4] as [number, number, number]), '#bfe6c8');
+
+  ctx.fillStyle = 'rgba(20, 40, 30, 0.5)';
+  for (let i = 2; i < pts.length - 2; i += 2) {
+    ctx.beginPath();
+    ctx.arc(pts[i][0], pts[i][1] - pts[i][2] * 0.2, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const h = pts[0];
+  ctx.fillStyle = '#3a6b52';
+  ctx.beginPath();
+  ctx.ellipse(h[0] + 4, h[1], 11, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#0c1a12';
+  ctx.beginPath();
+  ctx.moveTo(h[0] + 14, h[1] - 1);
+  ctx.quadraticCurveTo(h[0] + 2, h[1] + 1, h[0] - 4, h[1] + 4);
+  ctx.quadraticCurveTo(h[0] + 4, h[1] + 8, h[0] + 14, h[1] + 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#eef5f0';
+  for (let i = 0; i < 4; i++) {
+    const x = h[0] + 11 - i * 4;
+    ctx.beginPath();
+    ctx.moveTo(x, h[1] + 1);
+    ctx.lineTo(x - 1, h[1] + 4);
+    ctx.lineTo(x + 1, h[1] + 4);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = '#0c1a12';
+  ctx.beginPath();
+  ctx.arc(h[0] + 7, h[1] - 3, 1.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/** Electric eel — long body, yellow belly, flickering blue electric sparks. */
+export function drawElectricEel(ctx: CanvasRenderingContext2D, fish: FishParticle, _tailWag: number): void {
+  ctx.save();
+  ctx.scale(fish.size / 40, fish.size / 40);
+  const pts = eelSegments(fish.tailPhase, 9, 22, 92, 5.5);
+  const flick = 0.6 + 0.4 * Math.abs(Math.sin(fish.tailPhase * 4));
+
+  for (let i = 3; i < pts.length - 2; i += 4) {
+    const p = pts[i];
+    const r = 12 * flick * (0.6 + 0.4 * Math.sin(fish.tailPhase * 8 + i));
+    const g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], Math.max(0.1, r));
+    g.addColorStop(0, 'rgba(90, 180, 255, ' + 0.45 * flick + ')');
+    g.addColorStop(1, 'rgba(90, 180, 255, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(p[0], p[1], Math.max(0.1, r), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  eelRibbon(ctx, pts, '#3a4a52');
+  eelRibbon(ctx, pts.map(([x, y, t]) => [x, y + t * 0.45, t * 0.5] as [number, number, number]), '#e8c65a');
+
+  ctx.strokeStyle = 'rgba(150, 220, 255, ' + 0.6 * flick + ')';
+  ctx.lineWidth = 1;
+  for (let s = 0; s < 3; s++) {
+    const p = pts[4 + s * 6];
+    if (!p) continue;
+    let x = p[0];
+    let y = p[1] - p[2] - 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    for (let k = 0; k < 4; k++) {
+      x += Math.sin(fish.tailPhase * 9 + k + s) * 4;
+      y -= 3 + Math.abs(Math.cos(fish.tailPhase * 7 + k)) * 3;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  const h = pts[0];
+  ctx.fillStyle = '#3a4a52';
+  ctx.beginPath();
+  ctx.ellipse(h[0] + 4, h[1], 10, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#e8c65a';
+  ctx.beginPath();
+  ctx.ellipse(h[0] + 4, h[1] + 4, 7, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#12202a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(h[0] + 12, h[1] + 2);
+  ctx.lineTo(h[0] + 5, h[1] + 4);
+  ctx.stroke();
+  ctx.fillStyle = '#0c1a20';
+  ctx.beginPath();
+  ctx.arc(h[0] + 6, h[1] - 2, 1.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
 }

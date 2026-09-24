@@ -186,6 +186,90 @@
         "Coral",
         "Penyu"
       ]
+    },
+    {
+      "id": "marlin",
+      "name": "Blue Marlin",
+      "scientificName": "Makaira nigricans",
+      "category": "Pelagic Predator",
+      "description": "Predator samudra tercepat dengan paruh panjang bak tombak, sirip punggung menjulang seperti layar, dan tubuh ramping keperakan yang melesat.",
+      "defaultNames": [
+        "Spear",
+        "Bolt",
+        "Marlo",
+        "Azure",
+        "Rapier"
+      ]
+    },
+    {
+      "id": "anglerfish",
+      "name": "Anglerfish",
+      "scientificName": "Melanocetus johnsonii",
+      "category": "Deep Sea",
+      "description": "Penghuni laut dalam bertubuh gelap membulat dengan umpan bercahaya di kepala dan rahang penuh gigi tajam untuk memikat mangsa dalam kegelapan.",
+      "defaultNames": [
+        "Lure",
+        "Abyss",
+        "Glowjaw",
+        "Fang",
+        "Nix"
+      ]
+    },
+    {
+      "id": "lanternfish",
+      "name": "Lanternfish",
+      "scientificName": "Myctophidae",
+      "category": "Deep Sea",
+      "description": "Ikan laut dalam mungil bermata besar dengan deretan titik cahaya (photophore) di sepanjang perutnya yang berpendar lembut kehijauan.",
+      "defaultNames": [
+        "Lumen",
+        "Blink",
+        "Spark",
+        "Glimmer",
+        "Nova"
+      ]
+    },
+    {
+      "id": "viperfish",
+      "name": "Viperfish",
+      "scientificName": "Chauliodus sloani",
+      "category": "Deep Sea",
+      "description": "Predator laut dalam ramping dengan gigi taring transparan yang begitu panjang hingga tak muat di mulut, plus umpan cahaya dan photophore.",
+      "defaultNames": [
+        "Fang",
+        "Venom",
+        "Dagger",
+        "Shade",
+        "Grim"
+      ]
+    },
+    {
+      "id": "moray",
+      "name": "Moray Eel",
+      "scientificName": "Muraena helena",
+      "category": "Reef Eel",
+      "description": "Belut karang bertubuh panjang berkelok yang mengintai dari celah batu, dengan rahang kuat bergigi kecil dan kulit hijau berbintik.",
+      "defaultNames": [
+        "Slink",
+        "Coil",
+        "Reef",
+        "Morrie",
+        "Jade"
+      ]
+    },
+    {
+      "id": "electricEel",
+      "name": "Electric Eel",
+      "scientificName": "Electrophorus electricus",
+      "category": "Electric",
+      "description": "Belut listrik bertubuh panjang dengan perut kekuningan yang mampu memancarkan percikan dan aura listrik biru yang berkedip di kegelapan air.",
+      "defaultNames": [
+        "Volt",
+        "Jolt",
+        "Ampere",
+        "Zap",
+        "Tesla"
+      ]
     }
   ],
   "namePool": [

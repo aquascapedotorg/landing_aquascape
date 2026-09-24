@@ -45,7 +45,13 @@ export type FishSpeciesType =
   | 'mantaRay'
   | 'pufferfish'
   | 'orca'
-  | 'turtle';
+  | 'turtle'
+  | 'marlin'
+  | 'anglerfish'
+  | 'lanternfish'
+  | 'viperfish'
+  | 'moray'
+  | 'electricEel';
 export type FishLifeStage = 'baby' | 'juvenile' | 'adult' | 'elderly' | 'fading';
 
 export interface FishParticle {

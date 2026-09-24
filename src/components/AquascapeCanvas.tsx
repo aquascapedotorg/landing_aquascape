@@ -18,6 +18,12 @@ import {
   drawPufferfish,
   drawOrca,
   drawTurtle,
+  drawMarlin,
+  drawAnglerfish,
+  drawLanternfish,
+  drawViperfish,
+  drawMoray,
+  drawElectricEel,
   getFishOrientation,
 } from './fishRenderer';
 import { getFishName, getActiveCommunalFishes } from '../data/fishCatalog';
@@ -231,6 +237,12 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           'pufferfish',
           'orca',
           'turtle',
+          'marlin',
+          'anglerfish',
+          'lanternfish',
+          'viperfish',
+          'moray',
+          'electricEel',
         ] as FishSpeciesType[]);
 
     const supabaseMode = isSupabaseModeActive();
@@ -1180,6 +1192,12 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         else if (fish.type === 'mascot') maxSpeed = 2.2;
         else if (fish.type === 'shark') maxSpeed = 2.5;
         else if (fish.type === 'dolphin') maxSpeed = 2.8;
+        else if (fish.type === 'marlin') maxSpeed = 3.4;
+        else if (fish.type === 'anglerfish') maxSpeed = 1.3;
+        else if (fish.type === 'lanternfish') maxSpeed = 2.2;
+        else if (fish.type === 'viperfish') maxSpeed = 2.0;
+        else if (fish.type === 'moray') maxSpeed = 1.4;
+        else if (fish.type === 'electricEel') maxSpeed = 1.5;
         if (speed > maxSpeed) {
           fish.vx = (fish.vx / speed) * maxSpeed;
           fish.vy = (fish.vy / speed) * maxSpeed;
@@ -1511,6 +1529,18 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         } else if (fish.type === 'turtle') {
           // --- PENYU LAUT ---
           drawTurtle(ctx, fish, tailWag, timeSec);
+        } else if (fish.type === 'marlin') {
+          drawMarlin(ctx, fish, tailWag);
+        } else if (fish.type === 'anglerfish') {
+          drawAnglerfish(ctx, fish, tailWag);
+        } else if (fish.type === 'lanternfish') {
+          drawLanternfish(ctx, fish, tailWag);
+        } else if (fish.type === 'viperfish') {
+          drawViperfish(ctx, fish, tailWag);
+        } else if (fish.type === 'moray') {
+          drawMoray(ctx, fish, tailWag);
+        } else if (fish.type === 'electricEel') {
+          drawElectricEel(ctx, fish, tailWag);
         } else {
           // --- NEON / CARDINAL TETRA ---
           const len = Math.max(1, Math.abs(fish.size));

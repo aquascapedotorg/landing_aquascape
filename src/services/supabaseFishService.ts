@@ -31,6 +31,12 @@ export const VALID_FISH_SPECIES: readonly FishSpeciesType[] = [
   'pufferfish',
   'orca',
   'turtle',
+  'marlin',
+  'anglerfish',
+  'lanternfish',
+  'viperfish',
+  'moray',
+  'electricEel',
 ] as const;
 
 /**

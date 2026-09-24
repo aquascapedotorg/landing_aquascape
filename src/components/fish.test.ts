@@ -20,8 +20,8 @@ import {
 } from './fishRenderer';
 
 describe('Fish Fauna & Naming System (TDD)', () => {
-  it('should have all 13 species registered in the catalog', () => {
-    expect(FISH_CATALOG.species).toHaveLength(13);
+  it('should have all 19 species registered in the catalog', () => {
+    expect(FISH_CATALOG.species).toHaveLength(19);
     const speciesIds = FISH_CATALOG.species.map((s) => s.id);
     expect(speciesIds).toContain('mascot');
     expect(speciesIds).toContain('neonTetra');
@@ -36,6 +36,12 @@ describe('Fish Fauna & Naming System (TDD)', () => {
     expect(speciesIds).toContain('pufferfish');
     expect(speciesIds).toContain('orca');
     expect(speciesIds).toContain('turtle');
+    expect(speciesIds).toContain('marlin');
+    expect(speciesIds).toContain('anglerfish');
+    expect(speciesIds).toContain('lanternfish');
+    expect(speciesIds).toContain('viperfish');
+    expect(speciesIds).toContain('moray');
+    expect(speciesIds).toContain('electricEel');
   });
 
   it('should prioritize the custom primary names defined by the user in fish-names.json', () => {

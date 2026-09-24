@@ -67,6 +67,12 @@ export function spawnBabyFish(
     rasbora: 21,
     neonTetra: 18,
     cherryShrimp: 13,
+    marlin: 44,
+    anglerfish: 38,
+    lanternfish: 20,
+    viperfish: 34,
+    moray: 38,
+    electricEel: 40,
   };
 
   const baseSize = baseSizes[species] || 20;
