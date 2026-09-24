@@ -38,7 +38,7 @@ export const Hero: React.FC<HeroProps> = ({
   };
 
   return (
-    <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden border-b border-teal-500/20">
+    <section className="relative min-h-screen flex items-center overflow-hidden border-b border-teal-500/20 pt-28 pb-16 md:pt-32 md:pb-20">
       {/* 1. Integrated Living Aquascape Tank as the Hero Background */}
       <div className="absolute inset-0 z-0">
         <AquascapeCanvas
