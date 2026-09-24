@@ -1217,19 +1217,24 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
             // The sprite faces +X; the outer horizontal flip handles leftward swim.
             const baseH = fish.size * 1.6;
             const baseW = baseH * getMascotAspect();
-            const phase = fish.tailPhase;
-            // Bobbing: small vertical undulation as it swims.
-            const bob = Math.sin(phase) * (fish.size * 0.05);
-            // Banking: tilt toward the direction of vertical travel (clamped).
-            const bank = Math.max(-0.25, Math.min(0.25, fish.vy * 0.12));
-            // Swim wave: a soft roll synced to the stroke.
-            const roll = Math.sin(phase) * 0.06;
-            // Squash & stretch: stretch along X on the forward stroke, ease back.
-            const stretch = 1 + Math.sin(phase * 2) * 0.04;
-            const squash = 1 - Math.sin(phase * 2) * 0.04;
+            // Drive the motion off the animation clock (fast, steady) plus a
+            // per-fish offset, layering several frequencies so it reads as an
+            // organic swim rather than a metronome. id offset desyncs multiples.
+            const t = timeSec * 3.2 + fish.id;
+            // Bobbing: clear vertical undulation.
+            const bob = Math.sin(t) * (fish.size * 0.14);
+            // Roll: soft rocking synced to the stroke (bigger than before).
+            const roll = Math.sin(t) * 0.16;
+            // Yaw-ish sway: a second, slower wave for a "wagging" feel.
+            const sway = Math.sin(t * 0.5 + 1.3) * 0.1;
+            // Banking: lean toward the direction of vertical travel.
+            const bank = Math.max(-0.3, Math.min(0.3, fish.vy * 0.14));
+            // Squash & stretch: body lengthens/shortens with the tail beat.
+            const stretch = 1 + Math.sin(t * 2) * 0.08;
+            const squash = 1 - Math.sin(t * 2) * 0.08;
 
             ctx.translate(0, bob);
-            ctx.rotate(bank + roll);
+            ctx.rotate(bank + roll + sway);
             ctx.imageSmoothingEnabled = true;
             const drawW = baseW * stretch;
             const drawH = baseH * squash;
