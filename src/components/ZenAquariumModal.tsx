@@ -8,6 +8,8 @@ import { isSupabaseModeActive } from '../services/supabaseFishService';
 import { subscribeToViewerCount } from '../services/presenceService';
 import { resolveLighting } from '../data/lightingUtils';
 import { getTodayLegendaryList } from '../services/legendaryService';
+import { hasPendingLegend } from '../services/legendaryPresence';
+import { LegendaryKoiSilhouette } from './LegendaryKoiSilhouette';
 import { aquascapeEvents } from './aquascapeEvents';
 import { Minimize2, Info, Droplets, Thermometer, Activity, Sliders, RotateCw, Trophy, Eye, EyeOff, Fish, Sparkles } from 'lucide-react';
 
@@ -106,6 +108,28 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
     return () => {
       clearTimeout(settle);
       unsub();
+    };
+  }, [isOpen]);
+
+  // A legend has been chosen today but its koi has NOT appeared on the canvas yet
+  // (its communal_fishes row hasn't been spawned). While that gap exists we show a
+  // dimmed golden koi silhouette hint ("Legend Incoming"). Recomputed whenever the
+  // legendary list changes OR the fish roster changes (a spawn may close the gap).
+  const [pendingLegend, setPendingLegend] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    const update = () => {
+      const canvasNames = aquascapeEvents.getFishList().map((f) => f.name);
+      setPendingLegend(hasPendingLegend(getTodayLegendaryList(), canvasNames));
+    };
+    update();
+    const settle = setTimeout(update, 400);
+    const unsubLegendary = aquascapeEvents.onLegendaryUpdated(update);
+    const unsubRoster = aquascapeEvents.onFishRosterChanged(update);
+    return () => {
+      clearTimeout(settle);
+      unsubLegendary();
+      unsubRoster();
     };
   }, [isOpen]);
 
@@ -308,6 +332,29 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
                 <p className="text-[10px] text-amber-300/80 font-mono">Aquascape Legend</p>
               </div>
               <Sparkles className="w-4 h-4 text-amber-300" />
+            </div>
+          </div>
+        )}
+
+        {/* "Legend Incoming" hint: a chosen legend today whose koi hasn't
+            appeared on the canvas yet. Shows a dimmed golden koi silhouette.
+            Supabase-only (list is empty otherwise); hidden in clean mode. */}
+        {!cleanMode && supabaseMode && pendingLegend && (
+          <div
+            className={`absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none ${
+              legendaryName ? 'top-36' : 'top-20'
+            }`}
+          >
+            <div className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-amber-300/40 bg-gradient-to-r from-amber-950/60 via-yellow-900/40 to-amber-950/60 backdrop-blur-md shadow-[0_0_16px_rgba(255,215,0,0.2)]">
+              <LegendaryKoiSilhouette size={40} />
+              <div className="leading-tight">
+                <p className="text-sm font-bold text-amber-200/90 tracking-wide">
+                  Legend Incoming
+                </p>
+                <p className="text-[10px] text-amber-300/70 font-mono">
+                  Menanti kedatangan sang koi legendaris
+                </p>
+              </div>
             </div>
           </div>
         )}
