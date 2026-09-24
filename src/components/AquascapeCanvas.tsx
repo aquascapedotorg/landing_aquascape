@@ -33,7 +33,6 @@ import { getLegendaryNames, getTodayLegendaryList } from '../services/legendaryS
 import { shouldTeaseLegend } from '../services/legendaryPresence';
 import { GhostKoi, createGhostKoi, updateGhostKoi } from './ghostKoi';
 import { resolveLighting } from '../data/lightingUtils';
-import { ensureMascotSprite, getMascotSprite, getMascotAspect, getMascotParts } from './mascotImage';
 import { recordKuaciEaten, getStreakFor } from '../services/streakService';
 import { CommunalFishInput } from './aquascapeEvents';
 import {
@@ -610,9 +609,6 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    // Start loading the logo-based mascot sprite (chroma-keyed, cropped).
-    ensureMascotSprite();
 
     let animationFrameId: number;
     let lastTime = performance.now();
@@ -1397,119 +1393,109 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           ctx.arc(L * 0.32, -Hh * 0.15, Math.max(1.5, L * 0.045), 0, Math.PI * 2);
           ctx.fill();
         } else if (fish.type === 'mascot') {
-          const sprite = getMascotSprite();
-          const parts = getMascotParts();
-          if (parts) {
-            // --- LOGO MASCOT with an independently FLAPPING TAIL ---
-            // Body stays as the logo; the tail piece rotates at its joint so the
-            // fish actually swishes like a real fish. Sprite faces +X; the outer
-            // flip handles leftward swimming.
-            const drawH = fish.size * 1.15;
-            const drawW = drawH * (parts.width / parts.height);
-            const s = drawW / parts.width; // sprite px -> world px scale
-            const t = timeSec * 4 + fish.id;
-
-            // Gentle whole-body life: bob + slight bank on vertical turns.
-            const bob = Math.sin(t) * (fish.size * 0.06);
-            const bank = Math.max(-0.22, Math.min(0.22, fish.vy * 0.12));
-            ctx.translate(0, bob);
-            ctx.rotate(bank);
-            ctx.imageSmoothingEnabled = true;
-
-            // Origin currently at the fish center; sprite's own center is (w/2,h/2).
-            // Draw offset so the sprite is centered.
-            const ox = -parts.width * 0.5 * s;
-            const oy = -parts.height * 0.5 * s;
-
-            // Tail: rotate around the joint (splitX, vertical middle).
-            const jointX = ox + parts.splitX * s;
-            const jointY = oy + parts.height * 0.5 * s;
-            const wag = Math.sin(t) * 0.22; // radians — lively but no joint gap
-            ctx.save();
-            ctx.translate(jointX, jointY);
-            ctx.rotate(wag);
-            ctx.translate(-jointX, -jointY);
-            ctx.drawImage(parts.tail, ox, oy, parts.width * s, parts.height * s);
-            ctx.restore();
-
-            // Body on top (static, the recognizable logo).
-            ctx.drawImage(parts.body, ox, oy, parts.width * s, parts.height * s);
-          } else if (sprite) {
-            // Fallback: whole sprite with light procedural motion (before split ready).
-            const baseH = fish.size * 1.15;
-            const baseW = baseH * getMascotAspect();
-            const t = timeSec * 3.2 + fish.id;
-            ctx.translate(0, Math.sin(t) * (fish.size * 0.1));
-            ctx.rotate(Math.sin(t) * 0.12);
-            ctx.imageSmoothingEnabled = true;
-            ctx.drawImage(sprite, -baseW / 2, -baseH / 2, baseW, baseH);
-          } else {
-          // --- AQUASCAPE MASCOT ORIGAMI FISH (fallback until sprite loads) ---
-          // Faceted origami fish facing +X: a sharp diamond head with an eye, a
-          // two-facet gradient body, and a pointed V-notch tail. All edges are
-          // straight and pointed like folded paper — no rounded fins.
-          const scale = fish.size / 44;
+          // --- AQUASCAPE MASCOT: ORIGAMI-ELEGANT ---
+          // Keeps the logo's geometric/origami DNA but faceted, metallic, and
+          // layered for a premium look, with a soft brand-teal aura so it reads as
+          // special even when it's the only fish. Faces +X; outer flip + pitch
+          // already applied. Palette: brand teal/cyan + gold luxury accent.
+          const scale = fish.size / 40;
+          ctx.save();
           ctx.scale(scale, scale);
 
-          // Body top facet (lighter) — sharp diamond from mid-body to head base.
-          ctx.fillStyle = '#2f6d92';
+          // Soft aura glow (drawn in local space, behind the body).
+          const auraR = 34 * (0.92 + Math.sin(timeSec * 2 + fish.id) * 0.08);
+          const ag = ctx.createRadialGradient(0, 0, 0, 0, 0, auraR);
+          ag.addColorStop(0, 'rgba(56, 189, 176, 0.28)');
+          ag.addColorStop(0.6, 'rgba(56, 189, 176, 0.1)');
+          ag.addColorStop(1, 'rgba(56, 189, 176, 0)');
+          ctx.fillStyle = ag;
           ctx.beginPath();
-          ctx.moveTo(14, -14); // top, near head
-          ctx.lineTo(-14, 0);  // left mid (body/tail seam)
-          ctx.lineTo(14, 0);   // center-right seam
-          ctx.closePath();
+          ctx.arc(0, 0, auraR, 0, Math.PI * 2);
           ctx.fill();
 
-          // Body bottom facet (darker).
-          ctx.fillStyle = '#1c4a6b';
-          ctx.beginPath();
-          ctx.moveTo(14, 14);  // bottom, near head
-          ctx.lineTo(-14, 0);  // left mid
-          ctx.lineTo(14, 0);   // center-right seam
-          ctx.closePath();
-          ctx.fill();
-
-          // Head — dark navy diamond with a sharp nose tip at the right.
-          ctx.fillStyle = '#0d2438';
-          ctx.beginPath();
-          ctx.moveTo(38, 0);   // sharp nose tip
-          ctx.lineTo(14, -14); // top
-          ctx.lineTo(14, 14);  // bottom
-          ctx.closePath();
-          ctx.fill();
-
-          // Eye — round navy socket with a bright cyan pupil (as in the logo).
-          ctx.fillStyle = '#0a1a2c';
-          ctx.beginPath();
-          ctx.arc(22, 0, 4.2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#7fe4ef';
-          ctx.beginPath();
-          ctx.arc(22.5, -0.5, 1.8, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Tail — pointed V notch made of two bright cyan triangles, wagging.
+          // Layered origami tail (dark base + cyan overlay), wagging at the joint.
           ctx.save();
           ctx.translate(-14, 0);
           ctx.rotate(tailWag);
-          // upper tail blade
-          ctx.fillStyle = '#8fdff0';
+          ctx.fillStyle = '#0e5a63';
           ctx.beginPath();
           ctx.moveTo(0, 0);
-          ctx.lineTo(-22, -16);
-          ctx.lineTo(-8, 0);
+          ctx.lineTo(-20, -16);
+          ctx.lineTo(-12, 0);
+          ctx.lineTo(-20, 16);
           ctx.closePath();
           ctx.fill();
-          // lower tail blade (slightly darker for the fold)
-          ctx.fillStyle = '#63c7dd';
+          ctx.fillStyle = '#5eead4';
           ctx.beginPath();
           ctx.moveTo(0, 0);
-          ctx.lineTo(-22, 16);
-          ctx.lineTo(-8, 0);
+          ctx.lineTo(-14, -9);
+          ctx.lineTo(-9, 0);
+          ctx.lineTo(-14, 9);
           ctx.closePath();
           ctx.fill();
           ctx.restore();
-          } // end sprite/path fallback
+
+          // Top dorsal fold fin (behind body).
+          ctx.fillStyle = '#38bdb0';
+          ctx.beginPath();
+          ctx.moveTo(2, -13);
+          ctx.lineTo(-6, -24);
+          ctx.lineTo(-8, -11);
+          ctx.closePath();
+          ctx.fill();
+
+          // Faceted diamond body — cyan→deep-teal gradient for a metallic sheen.
+          const bg = ctx.createLinearGradient(-16, -15, 20, 15);
+          bg.addColorStop(0, '#5eead4');
+          bg.addColorStop(1, '#0e5a63');
+          ctx.fillStyle = bg;
+          ctx.beginPath();
+          ctx.moveTo(24, 0); // sharp nose tip (right)
+          ctx.lineTo(2, -15); // top fold
+          ctx.lineTo(-16, 0); // tail seam (left)
+          ctx.lineTo(2, 15); // bottom fold
+          ctx.closePath();
+          ctx.fill();
+
+          // Top-lit facet (upper triangle catches the light).
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+          ctx.beginPath();
+          ctx.moveTo(24, 0);
+          ctx.lineTo(2, -15);
+          ctx.lineTo(2, 0);
+          ctx.closePath();
+          ctx.fill();
+
+          // Gold keel facet (lower-front) — the luxury accent.
+          ctx.fillStyle = '#f5c542';
+          ctx.beginPath();
+          ctx.moveTo(24, 0);
+          ctx.lineTo(2, 15);
+          ctx.lineTo(2, 4);
+          ctx.closePath();
+          ctx.fill();
+
+          // Crisp fold lines (paper creases).
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(24, 0);
+          ctx.lineTo(-16, 0);
+          ctx.moveTo(2, -15);
+          ctx.lineTo(2, 15);
+          ctx.stroke();
+
+          // Eye — bright cyan pupil like the logo.
+          ctx.fillStyle = '#0a1a2c';
+          ctx.beginPath();
+          ctx.arc(13, -2, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#7fe4ef';
+          ctx.beginPath();
+          ctx.arc(13.6, -2.4, 1.3, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
         } else if (fish.type === 'cherryShrimp') {
           // --- CHERRY SHRIMP ---
           ctx.fillStyle = '#ef4444';
