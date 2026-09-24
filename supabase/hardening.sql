@@ -185,6 +185,16 @@ begin
   values (v_name, v_species)
   returning * into v_row;
 
+  -- Server-side legendary roll for EVERY inserted fish, so a fish's ~1% chance no
+  -- longer depends on a browser being open when it arrives. roll_legendary is
+  -- idempotent (guarded by legendary_rolled) and caps at one legend/day. Wrapped
+  -- so a legendary setup issue can never fail the fish insert itself.
+  begin
+    perform public.roll_legendary(v_name);
+  exception when others then
+    null; -- ignore: legendary is optional; the fish is already inserted
+  end;
+
   return v_row;
 end;
 $$;

@@ -90,7 +90,7 @@ import {
   setSupabaseModeActive,
 } from '../services/supabaseFishService';
 import { initStreakService } from '../services/streakService';
-import { initLegendaryService, rollForFish } from '../services/legendaryService';
+import { initLegendaryService } from '../services/legendaryService';
 import { aquascapeEvents } from '../components/aquascapeEvents';
 
 /**
@@ -193,8 +193,9 @@ export async function loadFishNamesCatalog(): Promise<void> {
           // Spawn dynamically into the tank
           aquascapeEvents.spawnFish(targetSpecies, safeName);
 
-          // Ultra-rare legendary roll for this newly-arrived fish (server decides).
-          rollForFish(safeName);
+          // NOTE: the legendary roll now happens SERVER-SIDE inside the
+          // add_communal_fish RPC on INSERT, so every fish gets its ~1% chance
+          // regardless of whether a browser was open. No client roll needed here.
 
           // Clean toast message without any emojis
           const speciesLabel =

@@ -263,13 +263,17 @@ Tabel, index, RLS policy, RPC, dan Realtime harus sudah disiapkan. Jalankan di
 
 1. [`supabase/schema.sql`](../supabase/schema.sql) — tabel `communal_fishes`, index,
    RLS (read publik), dan Realtime.
-2. [`supabase/legendary.sql`](../supabase/legendary.sql) — fitur legendary (opsional).
+2. [`supabase/legendary.sql`](../supabase/legendary.sql) — fitur legendary.
+   Jalankan **sebelum** `hardening.sql`, karena `add_communal_fish` memanggil
+   `roll_legendary` saat INSERT. (Kalau dilewati, ikan tetap masuk normal, hanya
+   tanpa roll legendary.)
 3. [`supabase/streak.sql`](../supabase/streak.sql) — streak & papan peringkat kuaci
    (`fish_daily_kuaci` + `increment_kuaci`, `fish_streaks` + `upsert_streaks`).
 4. **[`supabase/hardening.sql`](../supabase/hardening.sql) — WAJIB untuk webhook baru.**
    Menutup INSERT publik langsung dan membuat RPC **`add_communal_fish`** (validasi,
-   filter kata kasar, normalisasi species, rate limit). Tanpa ini, endpoint webhook
-   pada Bagian 1 akan mengembalikan `404` (RPC belum ada).
+   filter kata kasar, normalisasi species, rate limit, **+ roll legendary otomatis
+   server-side untuk setiap ikan**). Tanpa ini, endpoint webhook pada Bagian 1 akan
+   mengembalikan `404` (RPC belum ada).
 
 Catatan:
 - Setelah `hardening.sql`, INSERT langsung ke `/rest/v1/communal_fishes` **ditolak**
