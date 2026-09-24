@@ -1214,7 +1214,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
             // Body stays as the logo; the tail piece rotates at its joint so the
             // fish actually swishes like a real fish. Sprite faces +X; the outer
             // flip handles leftward swimming.
-            const drawH = fish.size * 1.6;
+            const drawH = fish.size * 1.15;
             const drawW = drawH * (parts.width / parts.height);
             const s = drawW / parts.width; // sprite px -> world px scale
             const t = timeSec * 4 + fish.id;
@@ -1246,7 +1246,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
             ctx.drawImage(parts.body, ox, oy, parts.width * s, parts.height * s);
           } else if (sprite) {
             // Fallback: whole sprite with light procedural motion (before split ready).
-            const baseH = fish.size * 1.6;
+            const baseH = fish.size * 1.15;
             const baseW = baseH * getMascotAspect();
             const t = timeSec * 3.2 + fish.id;
             ctx.translate(0, Math.sin(t) * (fish.size * 0.1));
