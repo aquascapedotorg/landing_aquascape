@@ -107,9 +107,12 @@ Pencocokan **tidak peka huruf besar/kecil** dan spasi di ujung diabaikan.
 | `udang`, `shrimp` | `cherryShrimp` |
 | `penyu` | `turtle` |
 | `pembunuh`, `paus orca` | `orca` |
-
-> Spesies baru (`marlin`, `anglerfish`, `lanternfish`, `viperfish`, `moray`,
-> `electricEel`) **belum punya alias Indonesia** — kirim pakai **ID resmi** di 4a.
+| `marlin`, `ikan pedang`, `pedang`, `todak` | `marlin` |
+| `pemancing`, `ikan pemancing`, `sungut ganda` | `anglerfish` |
+| `lentera`, `ikan lentera` | `lanternfish` |
+| `viper`, `ikan viper`, `ular` | `viperfish` |
+| `moray`, `belut moray`, `belut`, `sidat` | `moray` |
+| `belut listrik`, `listrik` | `electricEel` |
 
 ### 4c. Fallback
 

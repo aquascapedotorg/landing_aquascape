@@ -66,6 +66,37 @@ describe('new deep-sea species', () => {
     });
   });
 
+  describe('indonesian aliases for new species', () => {
+    const cases: Array<[string, string]> = [
+      ['ikan pedang', 'marlin'],
+      ['pedang', 'marlin'],
+      ['todak', 'marlin'],
+      ['pemancing', 'anglerfish'],
+      ['ikan pemancing', 'anglerfish'],
+      ['sungut ganda', 'anglerfish'],
+      ['lentera', 'lanternfish'],
+      ['ikan lentera', 'lanternfish'],
+      ['viper', 'viperfish'],
+      ['ular', 'viperfish'],
+      ['belut', 'moray'],
+      ['sidat', 'moray'],
+      ['belut moray', 'moray'],
+      ['belut listrik', 'electricEel'],
+      ['listrik', 'electricEel'],
+    ];
+    cases.forEach(([alias, expected]) => {
+      it(`maps "${alias}" -> ${expected}`, () => {
+        expect(normalizeFishSpecies(alias)).toBe(expected);
+        expect(normalizeFishSpecies(alias.toUpperCase())).toBe(expected);
+      });
+    });
+
+    it('distinguishes belut (moray) from belut listrik (electricEel)', () => {
+      expect(normalizeFishSpecies('belut')).toBe('moray');
+      expect(normalizeFishSpecies('belut listrik')).toBe('electricEel');
+    });
+  });
+
   describe('draw functions are callable (smoke test)', () => {
     const makeCtx = () => {
       const calls: string[] = [];

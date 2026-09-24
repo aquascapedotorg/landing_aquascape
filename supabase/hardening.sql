@@ -52,6 +52,24 @@ begin
     when 'penyu' then 'turtle'
     when 'pembunuh' then 'orca'
     when 'paus orca' then 'orca'
+    -- Spesies deep-sea baru (samakan dgn normalizeFishSpecies di client).
+    -- 'belut listrik'/'listrik' -> electricEel; 'belut'/'sidat' -> moray.
+    when 'ikan pedang' then 'marlin'
+    when 'pedang' then 'marlin'
+    when 'todak' then 'marlin'
+    when 'pemancing' then 'anglerfish'
+    when 'ikan pemancing' then 'anglerfish'
+    when 'sungut ganda' then 'anglerfish'
+    when 'lentera' then 'lanternfish'
+    when 'ikan lentera' then 'lanternfish'
+    when 'viper' then 'viperfish'
+    when 'ikan viper' then 'viperfish'
+    when 'ular' then 'viperfish'
+    when 'belut listrik' then 'electriceel'
+    when 'listrik' then 'electriceel'
+    when 'belut moray' then 'moray'
+    when 'belut' then 'moray'
+    when 'sidat' then 'moray'
     else s
   end;
 

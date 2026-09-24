@@ -66,6 +66,14 @@ export function normalizeFishSpecies(speciesInput?: string | null): FishSpeciesT
   if (cleaned === 'udang' || cleaned === 'shrimp') return 'cherryShrimp';
   if (cleaned === 'penyu') return 'turtle';
   if (cleaned === 'pembunuh' || cleaned === 'paus orca') return 'orca';
+  // New deep-sea species aliases. Check the specific phrase before the generic
+  // word ('belut listrik' before 'belut') so electric eel isn't mistaken for moray.
+  if (cleaned === 'marlin' || cleaned === 'ikan pedang' || cleaned === 'pedang' || cleaned === 'todak') return 'marlin';
+  if (cleaned === 'pemancing' || cleaned === 'ikan pemancing' || cleaned === 'sungut ganda') return 'anglerfish';
+  if (cleaned === 'lentera' || cleaned === 'ikan lentera') return 'lanternfish';
+  if (cleaned === 'viper' || cleaned === 'ikan viper' || cleaned === 'ular') return 'viperfish';
+  if (cleaned === 'belut listrik' || cleaned === 'listrik') return 'electricEel';
+  if (cleaned === 'moray' || cleaned === 'belut moray' || cleaned === 'belut' || cleaned === 'sidat') return 'moray';
 
   // Default to neonTetra
   return 'neonTetra';
