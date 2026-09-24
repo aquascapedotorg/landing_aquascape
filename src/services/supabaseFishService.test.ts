@@ -177,7 +177,9 @@ describe('Supabase Fish Service & Data Source Configuration', () => {
 
       expect(result).toEqual(mockData);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://test.supabase.co/rest/v1/communal_fishes?select=*'),
+        expect.stringContaining(
+          'https://test.supabase.co/rest/v1/communal_fishes?select=id,name,species,created_at,entry_date'
+        ),
         expect.objectContaining({
           headers: expect.objectContaining({
             apikey: 'test-key',

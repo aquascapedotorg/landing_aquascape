@@ -209,25 +209,38 @@ export async function fetchFishFromSupabase(
     Accept: 'application/json',
   };
 
+  // Only the columns the canvas actually needs, and a hard row cap. This keeps
+  // each poll cheap on Disk IO (no SELECT * over the whole table): we never
+  // render more than a few hundred nametags anyway.
+  const SELECT_COLS = 'id,name,species,created_at,entry_date';
+  const ROW_LIMIT = 200;
+
   // Attempt 1: Query with PostgREST filter for created_at >= startOfToday
   const endpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(
     tableName
-  )}?select=*&created_at=gte.${encodeURIComponent(startOfToday)}&order=created_at.desc`;
+  )}?select=${SELECT_COLS}&created_at=gte.${encodeURIComponent(
+    startOfToday
+  )}&order=created_at.desc&limit=${ROW_LIMIT}`;
 
   let response = await fetch(endpoint, {
     method: 'GET',
     headers,
   });
 
-  // Attempt 2: If created_at filtering fails, fallback to select=* and do client-side filter
+  // Attempt 2: If created_at filtering fails, fallback to the same columns
+  // ordered by id and do client-side date filtering.
   if (!response.ok) {
-    const fallbackEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(tableName)}?select=*&order=id.desc`;
+    const fallbackEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(
+      tableName
+    )}?select=${SELECT_COLS}&order=id.desc&limit=${ROW_LIMIT}`;
     response = await fetch(fallbackEndpoint, { method: 'GET', headers });
   }
 
-  // Attempt 3: plain select=*
+  // Attempt 3: plain column select (last-resort compatibility)
   if (!response.ok) {
-    const fallbackEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(tableName)}?select=*`;
+    const fallbackEndpoint = `${cleanUrl}/rest/v1/${encodeURIComponent(
+      tableName
+    )}?select=${SELECT_COLS}&limit=${ROW_LIMIT}`;
     response = await fetch(fallbackEndpoint, { method: 'GET', headers });
   }
 
@@ -376,8 +389,10 @@ export function subscribeToSupabaseFish(
     console.warn('[Aquascape Realtime] WebSocket setup error:', err);
   }
 
-  // 2. Setup background polling fallback (every 7 seconds) as a safety net for
-  //    any window where the socket is momentarily disconnected.
+  // 2. Setup background polling fallback (every 30 seconds) as a safety net for
+  //    any window where the socket is momentarily disconnected. Realtime is the
+  //    primary path; this poll only covers brief socket gaps, so a slow cadence
+  //    keeps Disk IO low without losing fish for long.
   const pollIntervalId = setInterval(async () => {
     const current = activeRealtime;
     if (!current || current.key !== key) return;
@@ -394,7 +409,7 @@ export function subscribeToSupabaseFish(
     } catch {
       // Ignore background poll errors
     }
-  }, 7000);
+  }, 30000);
 
   sub.supabase = supabase;
   sub.channel = channel;

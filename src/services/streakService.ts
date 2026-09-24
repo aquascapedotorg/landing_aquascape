@@ -12,7 +12,10 @@ import {
 } from './supabaseFishService';
 import { aquascapeEvents } from '../components/aquascapeEvents';
 
-const FLUSH_INTERVAL_MS = 5000;
+// Kuaci counts are buffered client-side and written in one batch every 30s.
+// A slower flush drastically cuts Disk IO writes (WAL/checkpoint) versus the
+// old 5s cadence, while the buffer guarantees no eaten kuaci is lost.
+const FLUSH_INTERVAL_MS = 30000;
 const SNAPSHOT_DEBOUNCE_MS = 10000;
 
 let client: SupabaseClient | null = null;
@@ -110,7 +113,11 @@ async function flushKuaci(): Promise<void> {
       if (remaining > 0) kuaciBuffer.set(name, remaining);
       else kuaciBuffer.delete(name);
     }
-    await refresh();
+    // NOTE: we deliberately do NOT call refresh() here. The increment_kuaci
+    // write triggers a Realtime `*` event on fish_daily_kuaci (see the channel
+    // subscription in initStreakService), which recomputes the leaderboard
+    // without an extra pair of full-table SELECTs per flush. Dropping this call
+    // is the single biggest Disk IO saving in the streak path.
   } catch (err) {
     // Retain buffer for the next flush; nothing is lost.
     console.warn('[Aquascape Streak] Kuaci flush failed, will retry:', err);
