@@ -23,6 +23,7 @@ class AquascapeEventManager {
   private rosterListeners: (() => void)[] = [];
   private catalogListeners: (() => void)[] = [];
   private streakListeners: (() => void)[] = [];
+  private legendaryListeners: (() => void)[] = [];
   private toastListeners: ((message: string, species?: FishSpeciesType) => void)[] = [];
 
   /**
@@ -224,6 +225,23 @@ class AquascapeEventManager {
         l();
       } catch (err) {
         console.error('Error in streak updated listener:', err);
+      }
+    });
+  }
+
+  public onLegendaryUpdated(listener: () => void): () => void {
+    this.legendaryListeners.push(listener);
+    return () => {
+      this.legendaryListeners = this.legendaryListeners.filter((l) => l !== listener);
+    };
+  }
+
+  public notifyLegendaryUpdated(): void {
+    this.legendaryListeners.forEach((l) => {
+      try {
+        l();
+      } catch (err) {
+        console.error('Error in legendary updated listener:', err);
       }
     });
   }
