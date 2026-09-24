@@ -5,6 +5,7 @@ import { FishCustomizerModal } from './FishCustomizerModal';
 import { StreakLeaderboardDrawer } from './StreakLeaderboardDrawer';
 import { AquascapeSettings } from '../types';
 import { isSupabaseModeActive } from '../services/supabaseFishService';
+import { subscribeToViewerCount } from '../services/presenceService';
 import { resolveLighting } from '../data/lightingUtils';
 import { getTodayLegendaryList } from '../services/legendaryService';
 import { aquascapeEvents } from './aquascapeEvents';
@@ -81,6 +82,15 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
       clearTimeout(settle);
       unsubscribe();
     };
+  }, [isOpen]);
+
+  // Live count of people currently viewing the site (shared Supabase Presence
+  // channel — same number shown on the main landing header, no double-counting).
+  const [viewerCount, setViewerCount] = useState(0);
+  useEffect(() => {
+    if (!isOpen) return;
+    const unsubscribe = subscribeToViewerCount(setViewerCount);
+    return unsubscribe;
   }, [isOpen]);
 
   const [legendaryName, setLegendaryName] = useState<string | null>(null);
@@ -226,6 +236,27 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
                 <Sliders className="w-4 h-4 text-teal-400" />
                 <span className="hidden sm:inline">Fauna & Nama Ikan</span>
               </button>
+            )}
+
+            {/* Realtime viewer count — same shared presence number as the landing
+                header. Hidden when there are no viewers / Supabase is off. */}
+            {viewerCount > 0 && (
+              <div
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/80 border border-emerald-400/30 text-emerald-200 font-semibold text-xs shadow-lg backdrop-blur-md"
+                title="Sedang menonton sekarang"
+                aria-live="polite"
+                aria-label={`${viewerCount} ${viewerCount === 1 ? 'View' : 'Views'} sedang menonton`}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                <Eye className="w-4 h-4 text-emerald-400" />
+                <span className="tabular-nums">{viewerCount}</span>
+                <span className="hidden sm:inline text-emerald-300/70 font-normal">
+                  {viewerCount === 1 ? 'View' : 'Views'}
+                </span>
+              </div>
             )}
 
             {/* Live fish count — placed to the left of the Ranking button. */}
