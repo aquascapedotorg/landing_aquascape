@@ -39,6 +39,7 @@ interface CanvasProps {
   onFeed?: () => void;
   className?: string;
   isHeroOnly?: boolean;
+  cleanMode?: boolean;
   onRegenerate?: (count?: number) => void;
 }
 
@@ -108,15 +109,21 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
   settings,
   className = '',
   isHeroOnly = false,
+  cleanMode = false,
   onRegenerate,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const settingsRef = useRef<AquascapeSettings>(settings);
+  const cleanModeRef = useRef(cleanMode);
 
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
+
+  useEffect(() => {
+    cleanModeRef.current = cleanMode;
+  }, [cleanMode]);
 
   // Particles and entities stored in refs for optimal 60fps rendering without React re-render lag
   const fishRef = useRef<FishParticle[]>([]);
@@ -1539,7 +1546,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
         // 7b. Interactive Nametag on Hover / Always On
         const distToMouse = Math.hypot(fish.x - mouseRef.current.x, fish.y - mouseRef.current.y);
         const isHovered = mouseRef.current.active && distToMouse < Math.max(38, fish.size * 1.5);
-        if (currentSettings.showNametags || isHovered || isHighlight || fish.isLegendary) {
+        if (currentSettings.showNametags || isHovered || isHighlight || (fish.isLegendary && !cleanModeRef.current)) {
           const streakInfo = fish.isCommunal ? getStreakFor(fish.name) : undefined;
           drawFishNametag(ctx, fish, isHovered || isHighlight, streakInfo);
         }

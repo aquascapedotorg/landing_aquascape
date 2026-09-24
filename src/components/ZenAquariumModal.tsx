@@ -150,6 +150,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
           settings={canvasSettings}
           className="w-full h-full"
           isHeroOnly={false}
+          cleanMode={cleanMode}
           onRegenerate={onRegenerate}
         />
 
