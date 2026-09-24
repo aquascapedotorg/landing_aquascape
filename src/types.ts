@@ -76,6 +76,7 @@ export interface FishParticle {
   communalId?: string | number;
   hovered?: boolean;
   highlightUntil?: number;
+  isLegendary?: boolean;
 }
 
 export interface BubbleParticle {

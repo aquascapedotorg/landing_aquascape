@@ -90,6 +90,7 @@ import {
   setSupabaseModeActive,
 } from '../services/supabaseFishService';
 import { initStreakService } from '../services/streakService';
+import { initLegendaryService, rollForFish } from '../services/legendaryService';
 import { aquascapeEvents } from '../components/aquascapeEvents';
 
 /**
@@ -130,6 +131,7 @@ export async function loadFishNamesCatalog(): Promise<void> {
     setSupabaseModeActive(true);
     // Start streak/leaderboard tracking (Supabase-only feature).
     initStreakService();
+    initLegendaryService();
 
     try {
       const rows = await fetchFishFromSupabase(
@@ -190,6 +192,9 @@ export async function loadFishNamesCatalog(): Promise<void> {
 
           // Spawn dynamically into the tank
           aquascapeEvents.spawnFish(targetSpecies, safeName);
+
+          // Ultra-rare legendary roll for this newly-arrived fish (server decides).
+          rollForFish(safeName);
 
           // Clean toast message without any emojis
           const speciesLabel =
