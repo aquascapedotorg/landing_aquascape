@@ -1855,69 +1855,154 @@ export function getFishOrientation(vx: number, vy: number): {
 // facing direction, like the other draw* functions. Body faces +X (right).
 // ---------------------------------------------------------------------------
 
-/** Marlin — streamlined pelagic with a long bill and tall dorsal sail. */
+/**
+ * Marlin — blue marlin replica: navy back, silver belly with a gold band, light
+ * vertical bars, a swept dorsal sail, long thin fins, a big lunate tail, and a
+ * long spear bill that tapers to a sharp point. Faces +X.
+ */
 export function drawMarlin(ctx: CanvasRenderingContext2D, fish: FishParticle, tailWag: number): void {
   ctx.save();
-  ctx.scale(fish.size / 40, fish.size / 40);
+  ctx.scale(fish.size / 44, fish.size / 44);
 
-  ctx.strokeStyle = '#1b3a5b';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(38, -1);
-  ctx.lineTo(70, -3);
-  ctx.stroke();
+  const NAVY = '#1b3a6b';
+  const SILVER = '#d9e6f0';
 
-  ctx.fillStyle = '#20496e';
+  // --- Fins first (roots pushed into body, all swept toward the tail) ---
+  ctx.fillStyle = NAVY;
+  // pectoral
   ctx.beginPath();
-  ctx.moveTo(6, -9);
-  ctx.quadraticCurveTo(2, -34, -14, -30);
-  ctx.quadraticCurveTo(-6, -14, -16, -9);
+  ctx.moveTo(20, 4);
+  ctx.quadraticCurveTo(6, 16, -6, 18);
+  ctx.quadraticCurveTo(10, 8, 18, 5);
+  ctx.closePath();
+  ctx.fill();
+  // pelvic (long thin ribbon near throat)
+  ctx.beginPath();
+  ctx.moveTo(22, 6);
+  ctx.quadraticCurveTo(16, 20, 6, 24);
+  ctx.quadraticCurveTo(18, 10, 19, 6);
+  ctx.closePath();
+  ctx.fill();
+  // anal (rear-bottom)
+  ctx.beginPath();
+  ctx.moveTo(-22, 7);
+  ctx.quadraticCurveTo(-30, 15, -36, 12);
+  ctx.quadraticCurveTo(-26, 6, -22, 5);
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = '#2f6591';
+  // Dorsal sail: tall over the shoulder, sweeping down and back along the spine.
   ctx.beginPath();
-  ctx.moveTo(40, -1);
-  ctx.quadraticCurveTo(10, -15, -24, -8);
-  ctx.lineTo(-36, 0);
-  ctx.quadraticCurveTo(-12, 12, 10, 7);
-  ctx.quadraticCurveTo(30, 4, 40, -1);
+  ctx.moveTo(18, -7);
+  ctx.quadraticCurveTo(16, -30, 6, -30);
+  ctx.quadraticCurveTo(-2, -24, -8, -12);
+  ctx.quadraticCurveTo(-20, -10, -30, -6);
+  ctx.lineTo(-28, -4);
+  ctx.quadraticCurveTo(-10, -7, 18, -5);
   ctx.closePath();
   ctx.fill();
+  ctx.strokeStyle = 'rgba(120, 170, 230, 0.5)';
+  ctx.lineWidth = 0.7;
+  for (let i = 0; i < 5; i++) {
+    const x = 12 - i * 4;
+    ctx.beginPath();
+    ctx.moveTo(x, -6);
+    ctx.lineTo(x - 2, -24 + i * 3);
+    ctx.stroke();
+  }
 
-  ctx.fillStyle = '#bfe0f2';
-  ctx.beginPath();
-  ctx.moveTo(30, 3);
-  ctx.quadraticCurveTo(0, 9, -26, 2);
-  ctx.quadraticCurveTo(-10, 11, 10, 7);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#1b3a5b';
-  ctx.beginPath();
-  ctx.moveTo(6, 5);
-  ctx.lineTo(-6, 20);
-  ctx.lineTo(2, 6);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#08131d';
-  ctx.beginPath();
-  ctx.arc(26, -3, 2, 0, Math.PI * 2);
-  ctx.fill();
-
+  // Tail: big lunate crescent, attached at the tail base.
   ctx.save();
   ctx.translate(-36, 0);
-  ctx.rotate(tailWag * 1.2);
-  ctx.fillStyle = '#20496e';
+  ctx.rotate(tailWag);
+  ctx.fillStyle = NAVY;
   ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(-16, -14);
-  ctx.lineTo(-10, 0);
-  ctx.lineTo(-16, 14);
+  ctx.moveTo(6, 0);
+  ctx.lineTo(-10, -20);
+  ctx.quadraticCurveTo(-2, -6, -6, 0);
+  ctx.quadraticCurveTo(-2, 6, -10, 20);
+  ctx.quadraticCurveTo(0, 4, 6, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(150, 60, 60, 0.5)';
+  ctx.beginPath();
+  ctx.moveTo(-10, -20);
+  ctx.lineTo(-6, -13);
+  ctx.lineTo(-8, -19);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-10, 20);
+  ctx.lineTo(-6, 13);
+  ctx.lineTo(-8, 19);
   ctx.closePath();
   ctx.fill();
   ctx.restore();
+
+  // Body: navy back fading to a gold band then silver belly. Drawn over fin roots.
+  ctx.beginPath();
+  ctx.moveTo(40, -2); // pointed head tip (bill grows from here)
+  ctx.quadraticCurveTo(26, -11, -2, -11);
+  ctx.quadraticCurveTo(-24, -9, -36, 0);
+  ctx.quadraticCurveTo(-24, 9, -2, 11);
+  ctx.quadraticCurveTo(24, 10, 40, 2);
+  ctx.closePath();
+  const bodyGrad = ctx.createLinearGradient(0, -11, 0, 11);
+  bodyGrad.addColorStop(0, NAVY);
+  bodyGrad.addColorStop(0.42, '#2f5fa0');
+  bodyGrad.addColorStop(0.52, '#c9962f');
+  bodyGrad.addColorStop(0.6, SILVER);
+  bodyGrad.addColorStop(1, '#f0f6fb');
+  ctx.fillStyle = bodyGrad;
+  ctx.fill();
+
+  // Vertical light-blue bars, clipped to the body.
+  ctx.save();
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(120, 180, 235, 0.75)';
+  ctx.lineWidth = 1.1;
+  for (let i = 0; i < 13; i++) {
+    const x = 26 - i * 5;
+    ctx.beginPath();
+    ctx.moveTo(x, -11);
+    ctx.lineTo(x - 1, 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Gill line + eye.
+  ctx.strokeStyle = 'rgba(20, 40, 70, 0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(24, -8);
+  ctx.quadraticCurveTo(20, 0, 24, 8);
+  ctx.stroke();
+  ctx.fillStyle = '#08131d';
+  ctx.beginPath();
+  ctx.arc(29, -3, 1.9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#cfeeff';
+  ctx.beginPath();
+  ctx.arc(29.6, -3.6, 0.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Bill: long spear tapering to a single sharp point, drawn last (clean).
+  const billGrad = ctx.createLinearGradient(40, 0, 86, 0);
+  billGrad.addColorStop(0, '#3a5f92');
+  billGrad.addColorStop(1, '#9fb8d4');
+  ctx.fillStyle = billGrad;
+  ctx.beginPath();
+  ctx.moveTo(38, -2.4);
+  ctx.lineTo(86, 0.4);
+  ctx.lineTo(38, 1.2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(20, 40, 70, 0.55)';
+  ctx.lineWidth = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(38, -2.2);
+  ctx.lineTo(86, 0.4);
+  ctx.stroke();
 
   ctx.restore();
 }
