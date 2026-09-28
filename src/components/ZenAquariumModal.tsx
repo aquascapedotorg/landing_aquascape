@@ -338,7 +338,7 @@ export const ZenAquariumModal: React.FC<ZenProps> = ({
               <Sparkles className="w-4 h-4 text-amber-300" />
               <div className="leading-tight">
                 <p className="text-sm font-bold text-amber-200 tracking-wide">
-                  {legendaryName} — Shining Gold, Chosen Today
+                  {legendaryName}, Shining Gold, Chosen Today
                 </p>
                 <p className="text-[10px] text-amber-300/80 font-mono">Aquascape Legend</p>
               </div>
