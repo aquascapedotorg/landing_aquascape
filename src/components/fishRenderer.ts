@@ -1780,10 +1780,13 @@ export function drawFishNametag(
       moray: 'Moray',
       electricEel: 'Belut Listrik',
     };
-    const speciesLabel =
-      SPECIES_LABELS[fish.type] ||
-      FISH_CATALOG.species.find((s) => s.id === fish.type)?.name ||
-      'Ikan';
+    // Legendary fish are rendered as a gold koi regardless of their real species,
+    // so the tooltip must match what's on screen, not the underlying fish.type.
+    const speciesLabel = fish.isLegendary
+      ? 'Koi Legendaris'
+      : SPECIES_LABELS[fish.type] ||
+        FISH_CATALOG.species.find((s) => s.id === fish.type)?.name ||
+        'Ikan';
 
     const stageLabel = fish.stage === 'baby' ? 'Bayi' : fish.stage === 'juvenile' ? 'Remaja' : fish.stage === 'elderly' ? 'Tua' : 'Dewasa';
     // Hunger is a life-cycle stat; it's meaningless in Supabase mode (life cycle
