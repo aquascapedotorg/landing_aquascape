@@ -25,7 +25,7 @@ function margin(g: { size: number }): number {
  * Bergerak pelan (lebih lambat dari ikan biasa) agar terasa anggun & misterius.
  */
 export function createGhostKoi(w: number, h: number): GhostKoi {
-  const size = 40;
+  const size = 52; // must match LEGENDARY_KOI_BASE_SIZE in AquascapeCanvas
   const m = Math.max(48, size * 1.2);
   const dir = Math.random() < 0.5 ? -1 : 1;
   return {
