@@ -52,7 +52,7 @@ interface CanvasProps {
 }
 
 /** Fixed base size for legendary gold koi — ensures consistent size regardless of original species. */
-const LEGENDARY_KOI_BASE_SIZE = 52;
+const LEGENDARY_KOI_BASE_SIZE = 40;
 
 interface PlantStem {
   baseX: number;
