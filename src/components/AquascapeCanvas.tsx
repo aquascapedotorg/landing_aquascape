@@ -1539,7 +1539,7 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           drawShark(ctx, fish, tailWag);
         } else if (fish.type === 'whale') {
           // --- PAUS (WHALE) ---
-          drawWhale(ctx, fish, tailWag);
+          drawWhale(ctx, fish, tailWag, timeSec);
         } else if (fish.type === 'dolphin') {
           // --- LUMBA-LUMBA (DOLPHIN) ---
           drawDolphin(ctx, fish, tailWag);

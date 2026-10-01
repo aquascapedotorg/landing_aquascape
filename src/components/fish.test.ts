@@ -264,7 +264,7 @@ describe('Fish Fauna & Naming System (TDD)', () => {
       ageSec: 20,
     };
 
-    drawWhale(mockCtx, fish, 0.1);
+    drawWhale(mockCtx, fish, 0.1, 1.0);
     expect(mockCtx.save).toHaveBeenCalled();
     expect(mockCtx.fill).toHaveBeenCalled();
     expect(mockCtx.restore).toHaveBeenCalled();

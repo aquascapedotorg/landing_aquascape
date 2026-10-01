@@ -1119,79 +1119,203 @@ export function drawWhale(
   const scale = fish.size / 54;
   ctx.scale(scale, scale);
 
-  // 1. Massive Oceanic Blue Body
-  ctx.fillStyle = '#1e3a5f';
+  // 1. Massive Oceanic Blue Body with Depth Gradient
+  let bodyGrad: CanvasGradient | string = '#1e3a5f';
+  if (ctx.createLinearGradient) {
+    const grad = ctx.createLinearGradient(0, -20, 0, 18);
+    grad.addColorStop(0, '#0c2340');    // Deep midnight oceanic blue at top
+    grad.addColorStop(0.45, '#1e3a5f'); // Rich navy blue midbody
+    grad.addColorStop(1, '#255784');    // Illuminated ocean blue belly base
+    bodyGrad = grad;
+  }
+  ctx.fillStyle = bodyGrad;
   ctx.beginPath();
-  ctx.moveTo(42, -4); // round head
-  ctx.quadraticCurveTo(25, -20, -22, -12); // upper spine
-  ctx.lineTo(-44, -2);
-  ctx.quadraticCurveTo(-20, 20, 22, 14); // lower belly
-  ctx.quadraticCurveTo(42, 10, 42, -4);
+  ctx.moveTo(44, -3);                       // Rounded snout tip
+  ctx.quadraticCurveTo(34, -18, 6, -18);   // Forehead / blowhole arch
+  ctx.quadraticCurveTo(-18, -17, -44, -2); // Spine arch down to tail peduncle
+  ctx.quadraticCurveTo(-22, 21, 20, 15);   // Deep ventral belly arch
+  ctx.quadraticCurveTo(42, 10, 44, -3);    // Lower jaw up to snout tip
   ctx.closePath();
   ctx.fill();
 
-  // 2. Ventral Grooves / Pleats (Throat underbelly)
-  ctx.fillStyle = '#93c5fd';
+  // 2. Ventral Grooves / Throat Pleats (Baleen underbelly plate with gradient)
+  let bellyGrad: CanvasGradient | string = '#93c5fd';
+  if (ctx.createLinearGradient) {
+    const bGrad = ctx.createLinearGradient(0, 2, 0, 17);
+    bGrad.addColorStop(0, '#bae6fd');
+    bGrad.addColorStop(0.5, '#7dd3fc');
+    bGrad.addColorStop(1, '#38bdf8');
+    bellyGrad = bGrad;
+  }
+  ctx.fillStyle = bellyGrad;
   ctx.beginPath();
-  ctx.moveTo(38, 2);
-  ctx.quadraticCurveTo(18, 16, -10, 10);
-  ctx.lineTo(-8, 5);
-  ctx.quadraticCurveTo(20, 8, 38, 2);
+  ctx.moveTo(40, 2);
+  ctx.quadraticCurveTo(20, 16, -12, 11);
+  ctx.quadraticCurveTo(-14, 7, -8, 5);
+  ctx.quadraticCurveTo(18, 7, 40, 2);
   ctx.closePath();
   ctx.fill();
 
-  // Pleat stripes
-  ctx.strokeStyle = 'rgba(30, 58, 95, 0.6)';
+  // Dynamic curved pleat grooves
   ctx.lineWidth = 1;
-  for (let s = 0; s < 4; s++) {
+  for (let s = 0; s < 6; s++) {
+    ctx.strokeStyle = `rgba(14, 43, 77, ${0.4 + (s % 2) * 0.25})`;
     ctx.beginPath();
-    ctx.moveTo(32 - s * 8, 4 + s * 1.5);
-    ctx.lineTo(8 - s * 6, 8 + s * 1.5);
+    const startX = 36 - s * 7;
+    const startY = 3.5 + s * 1.5;
+    const midX = 14 - s * 4.8;
+    const midY = 6.5 + s * 1.6;
+    const endX = -4 - s * 3.2;
+    const endY = 8 + s * 1.1;
+    ctx.moveTo(startX, startY);
+    ctx.quadraticCurveTo(midX, midY, endX, endY);
     ctx.stroke();
   }
 
-  // 3. Small curved dorsal fin far back
-  ctx.fillStyle = '#0f243e';
+  // 3. Peaceful Mouth Line
+  ctx.strokeStyle = 'rgba(10, 25, 47, 0.75)';
+  ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.moveTo(-16, -11);
-  ctx.quadraticCurveTo(-20, -18, -24, -17);
-  ctx.lineTo(-21, -10);
+  ctx.moveTo(43, -1);
+  ctx.quadraticCurveTo(34, 4, 18, 4);
+  ctx.stroke();
+
+  // 4. Mottled / Bioluminescent Spots on dorsal flank
+  ctx.fillStyle = 'rgba(186, 230, 253, 0.32)';
+  const spots = [
+    [-12, -10, 1.8, 1.2],
+    [-4, -12, 2.2, 1.4],
+    [8, -11, 2.5, 1.5],
+    [18, -9, 2.0, 1.3],
+    [-26, -7, 1.6, 1.0],
+    [-18, -4, 2.0, 1.2],
+    [2, -5, 2.4, 1.3],
+    [14, -4, 1.8, 1.1],
+    [-8, -1, 1.7, 1.1],
+  ];
+  for (const [sx, sy, rx, ry] of spots) {
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, rx, ry, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 5. Curved Dorsal Fin far back with gradient
+  let dorsalGrad: CanvasGradient | string = '#0b1d33';
+  if (ctx.createLinearGradient) {
+    const dGrad = ctx.createLinearGradient(-18, -11, -25, -20);
+    dGrad.addColorStop(0, '#152e4d');
+    dGrad.addColorStop(1, '#081729');
+    dorsalGrad = dGrad;
+  }
+  ctx.fillStyle = dorsalGrad;
+  ctx.beginPath();
+  ctx.moveTo(-15, -13);
+  ctx.quadraticCurveTo(-18, -21, -24, -20);
+  ctx.quadraticCurveTo(-22, -15, -20, -11);
   ctx.closePath();
   ctx.fill();
 
-  // 4. Pectoral Flipper
-  ctx.fillStyle = '#173050';
+  // 6. Graceful Pectoral Flipper with shading and rim highlight
+  let flipperGrad: CanvasGradient | string = '#17365d';
+  if (ctx.createLinearGradient) {
+    const fGrad = ctx.createLinearGradient(10, 5, -9, 27);
+    fGrad.addColorStop(0, '#1f4775');
+    fGrad.addColorStop(1, '#0e243f');
+    flipperGrad = fGrad;
+  }
+  ctx.fillStyle = flipperGrad;
   ctx.beginPath();
-  ctx.moveTo(8, 6);
-  ctx.quadraticCurveTo(4, 22, -8, 26);
-  ctx.quadraticCurveTo(-2, 16, 2, 6);
+  ctx.moveTo(10, 5);
+  ctx.quadraticCurveTo(6, 22, -7, 28);
+  ctx.quadraticCurveTo(-11, 27, -9, 23);
+  ctx.quadraticCurveTo(-2, 15, 2, 5);
   ctx.closePath();
   ctx.fill();
 
-  // 5. Gentle Eye
+  ctx.strokeStyle = 'rgba(147, 197, 253, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(10, 5);
+  ctx.quadraticCurveTo(6, 22, -7, 28);
+  ctx.stroke();
+
+  // 7. Expressive Eye with iris, pupil, and specular catchlight
+  // Eye socket shadow
+  ctx.fillStyle = 'rgba(10, 25, 47, 0.35)';
+  ctx.beginPath();
+  ctx.arc(30, -3, 3.2, 0, Math.PI * 2);
+  ctx.fill();
+  // Sclera
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.arc(28, -2, 2.2, 0, Math.PI * 2);
+  ctx.arc(30, -3, 2.4, 0, Math.PI * 2);
   ctx.fill();
+  // Iris & Pupil
   ctx.fillStyle = '#0f172a';
   ctx.beginPath();
-  ctx.arc(28, -2, 1.2, 0, Math.PI * 2);
+  ctx.arc(30.4, -3, 1.4, 0, Math.PI * 2);
+  ctx.fill();
+  // Specular catchlight
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(31.1, -3.7, 0.7, 0, Math.PI * 2);
   ctx.fill();
 
-  // 6. Broad Whale Tail Fluke
+  // 8. Balanced Whale Tail Fluke with smooth notch and gradient
   ctx.save();
   ctx.translate(-44, -2);
-  ctx.rotate(tailWag * 0.9);
-  ctx.fillStyle = '#173050';
+  ctx.rotate(tailWag * 0.85);
+
+  let flukeGrad: CanvasGradient | string = '#17365d';
+  if (ctx.createLinearGradient) {
+    const flkGrad = ctx.createLinearGradient(0, 0, -18, 0);
+    flkGrad.addColorStop(0, '#1e4470');
+    flkGrad.addColorStop(1, '#0b1d33');
+    flukeGrad = flkGrad;
+  }
+  ctx.fillStyle = flukeGrad;
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.bezierCurveTo(-10, -18, -24, -22, -22, -6);
-  ctx.lineTo(-14, 0); // fluke notch
-  ctx.lineTo(-22, 6);
-  ctx.bezierCurveTo(-24, 22, -10, 18, 0, 0);
+  // Upper lobe (scaled down ~35-40% for balanced proportions)
+  ctx.bezierCurveTo(-7, -11, -18, -15, -16, -4.5);
+  ctx.quadraticCurveTo(-14, -1.5, -10, 0); // Upper notch side
+  // Lower lobe
+  ctx.quadraticCurveTo(-14, 1.5, -16, 4.5);
+  ctx.bezierCurveTo(-18, 15, -7, 11, 0, 0);
   ctx.closePath();
   ctx.fill();
+
+  // Fluke notch highlight
+  ctx.strokeStyle = 'rgba(147, 197, 253, 0.35)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(-10, 0);
+  ctx.quadraticCurveTo(-14, -1.5, -16, -4.5);
+  ctx.moveTo(-10, 0);
+  ctx.quadraticCurveTo(-14, 1.5, -16, 4.5);
+  ctx.stroke();
   ctx.restore();
+
+  // 9. Water Blowhole Spout / Mist (periodic gentle pulse)
+  if (_timeSec > 0) {
+    const cycle = (_timeSec * 0.75) % 6;
+    if (cycle < 2.2) {
+      const t = cycle / 2.2;
+      ctx.save();
+      for (let b = 0; b < 6; b++) {
+        const bubbleT = (t + b * 0.15) % 1;
+        const bx = 16 + Math.sin(b * 1.6 + _timeSec * 3) * 3 - bubbleT * 3;
+        const by = -19 - bubbleT * 20;
+        const alpha = Math.sin(bubbleT * Math.PI) * 0.5;
+        const radius = 1.0 + bubbleT * 2.0;
+        ctx.fillStyle = `rgba(186, 230, 253, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(bx, by, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
 
   ctx.restore();
 }
