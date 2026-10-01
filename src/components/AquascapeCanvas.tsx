@@ -51,6 +51,9 @@ interface CanvasProps {
   onRegenerate?: (count?: number) => void;
 }
 
+/** Fixed base size for legendary gold koi — ensures consistent size regardless of original species. */
+const LEGENDARY_KOI_BASE_SIZE = 52;
+
 interface PlantStem {
   baseX: number;
   baseY: number;
@@ -1078,8 +1081,10 @@ export const AquascapeCanvas: React.FC<CanvasProps> = ({
           continue;
         }
 
-        // Dynamically compute size based on current life cycle stage
-        fish.size = fish.baseSize * getFishStageScale(fish.stage);
+        // Dynamically compute size based on current life cycle stage.
+        // Legendary fish use a fixed base size so the gold koi is always consistent.
+        const effectiveBase = fish.isLegendary ? LEGENDARY_KOI_BASE_SIZE : fish.baseSize;
+        fish.size = effectiveBase * getFishStageScale(fish.stage);
 
         // Nearest food search if hungry
         let targetFood: FoodParticle | null = null;
