@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# agent-office tooling artifacts (worker clones + config that it drops into the repo)
+.agent-office/
+/aquascapedotorg/
+/fahroediin/
