@@ -11,12 +11,17 @@ import {
   isSupabaseModeActive,
 } from './supabaseFishService';
 import { aquascapeEvents } from '../components/aquascapeEvents';
+import { createDebouncer } from './debounce';
 
 // Kuaci counts are buffered client-side and written in one batch every 30s.
 // A slower flush drastically cuts Disk IO writes (WAL/checkpoint) versus the
 // old 5s cadence, while the buffer guarantees no eaten kuaci is lost.
 const FLUSH_INTERVAL_MS = 30000;
 const SNAPSHOT_DEBOUNCE_MS = 10000;
+// Realtime events (fish inserts, kuaci changes) are bursty: a flush writes many
+// rows, and every open tab receives every event. Debounce the full-table refresh
+// so a burst triggers ONE recompute instead of one SELECT-pair per event per tab.
+const REFRESH_DEBOUNCE_MS = 3000;
 
 let client: SupabaseClient | null = null;
 let initialised = false;
@@ -72,6 +77,12 @@ async function refresh(): Promise<void> {
     // keep previous leaderboard on transient errors
   }
 }
+
+// Debounced leaderboard refresh for Realtime-driven updates. A burst of events
+// collapses into a single refresh() (one SELECT-pair) instead of one per event.
+const scheduleRefresh = createDebouncer(() => {
+  void refresh();
+}, REFRESH_DEBOUNCE_MS);
 
 function scheduleSnapshot(): void {
   if (snapshotTimer) return; // already scheduled
@@ -142,10 +153,10 @@ export function initStreakService(): void {
     channel = client
       .channel('streak_updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'communal_fishes' }, () => {
-        void refresh();
+        scheduleRefresh();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fish_daily_kuaci' }, () => {
-        void refresh();
+        scheduleRefresh();
       })
       .subscribe();
   } catch {
