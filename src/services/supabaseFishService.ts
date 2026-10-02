@@ -291,7 +291,10 @@ interface ActiveRealtimeSubscription {
   supabase: SupabaseClient | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   channel: any;
-  pollIntervalId: ReturnType<typeof setInterval>;
+  // Optional safety-net poll. Normally undefined: Realtime is the live path and a
+  // one-shot fetch on (re)connect covers socket gaps, so we no longer run a
+  // constant 30s poll (which was ~17k reads/day/tab — a top Disk IO source).
+  pollIntervalId?: ReturnType<typeof setInterval>;
   // The current fish handler; swapped in place on repeat subscribe() calls.
   onNewFish: (fish: SupabaseFishRow) => void;
   referenceDate: Date;
@@ -360,12 +363,23 @@ export function subscribeToSupabaseFish(
     key,
     supabase: null,
     channel: null,
-    // Placeholder timer; replaced below. Kept non-null for the type.
-    pollIntervalId: setInterval(() => {}, 1 << 30),
     onNewFish,
     referenceDate,
   };
-  clearInterval(sub.pollIntervalId);
+
+  // One-shot fetch to reconcile any rows missed while the socket was down. Called
+  // on first SUBSCRIBE and on every reconnect. seenSupabaseFishIds dedupes so this
+  // never double-spawns. Replaces the constant 30s poll (big Disk IO saving).
+  const reconcileOnce = async () => {
+    const current = activeRealtime;
+    if (!current || current.key !== key) return;
+    try {
+      const rows = await fetchFishFromSupabase(cleanUrl, anonKey, tableName, current.referenceDate);
+      for (const row of rows) handleIncomingRow(current, row);
+    } catch {
+      // Ignore reconcile errors; the next reconnect will try again.
+    }
+  };
 
   // 1. Setup Supabase Client Realtime Channel (one stable channel, no Date.now()
   //    in the name so reconnects reuse the same logical channel).
@@ -392,36 +406,18 @@ export function subscribeToSupabaseFish(
       )
       .subscribe((status: string) => {
         console.log(`[Aquascape Realtime] Channel status: ${status}`);
+        // On first connect AND every reconnect, reconcile once to catch any rows
+        // inserted while the socket was down — instead of polling constantly.
+        if (status === 'SUBSCRIBED') {
+          void reconcileOnce();
+        }
       });
   } catch (err) {
     console.warn('[Aquascape Realtime] WebSocket setup error:', err);
   }
 
-  // 2. Setup background polling fallback (every 30 seconds) as a safety net for
-  //    any window where the socket is momentarily disconnected. Realtime is the
-  //    primary path; this poll only covers brief socket gaps, so a slow cadence
-  //    keeps Disk IO low without losing fish for long.
-  const pollIntervalId = setInterval(async () => {
-    const current = activeRealtime;
-    if (!current || current.key !== key) return;
-    try {
-      const rows = await fetchFishFromSupabase(
-        cleanUrl,
-        anonKey,
-        tableName,
-        current.referenceDate
-      );
-      for (const row of rows) {
-        handleIncomingRow(current, row);
-      }
-    } catch {
-      // Ignore background poll errors
-    }
-  }, 30000);
-
   sub.supabase = supabase;
   sub.channel = channel;
-  sub.pollIntervalId = pollIntervalId;
   activeRealtime = sub;
 
   return makeUnsubscribe(key);
@@ -431,7 +427,7 @@ function teardownRealtime(): void {
   if (!activeRealtime) return;
   const sub = activeRealtime;
   activeRealtime = null;
-  clearInterval(sub.pollIntervalId);
+  if (sub.pollIntervalId) clearInterval(sub.pollIntervalId);
   if (sub.supabase && sub.channel) {
     sub.supabase.removeChannel(sub.channel).catch(() => {});
   }
