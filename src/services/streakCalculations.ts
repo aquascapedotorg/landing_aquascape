@@ -93,8 +93,13 @@ function computeCurrentStreak(
     if (dateSet.has(cursor)) {
       days.push(cursor);
       cursor = shiftDate(cursor, -1);
+    } else if (cursor === today) {
+      // Today isn't over yet: not having checked in so far doesn't break the
+      // streak. Without this, everyone's streak showed 0 each morning until
+      // they attended. Step back and keep counting from the previous day.
+      cursor = shiftDate(cursor, -1);
     } else {
-      // Unattended working day breaks the streak.
+      // Unattended PAST working day breaks the streak.
       break;
     }
   }

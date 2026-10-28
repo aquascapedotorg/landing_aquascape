@@ -155,3 +155,39 @@ describe('computeLeaderboard species', () => {
     expect(row.species).toBe('shark');
   });
 });
+
+describe('computeLeaderboard: today not yet attended', () => {
+  it('keeps the streak when today is a working day not attended yet', () => {
+    // 2026-02-16 Mon, 2026-02-17 Tue present; today 2026-02-18 Wed, not checked in yet
+    const att = [A('Budi', '2026-02-16'), A('Budi', '2026-02-17')];
+    const [row] = computeLeaderboard(att, [], '2026-02-18', NO_HOLIDAYS);
+    expect(row.currentStreak).toBe(2);
+  });
+
+  it('counts today once it is attended', () => {
+    const att = [A('Budi', '2026-02-16'), A('Budi', '2026-02-17'), A('Budi', '2026-02-18')];
+    const [row] = computeLeaderboard(att, [], '2026-02-18', NO_HOLIDAYS);
+    expect(row.currentStreak).toBe(3);
+  });
+
+  it('still breaks when the previous working day was missed', () => {
+    // Mon present, Tue MISSED, today Wed not checked in yet -> streak broken
+    const att = [A('Budi', '2026-02-16')];
+    const [row] = computeLeaderboard(att, [], '2026-02-18', NO_HOLIDAYS);
+    expect(row.currentStreak).toBe(0);
+  });
+
+  it('bridges a weekend before an unattended Monday', () => {
+    // Fri 2026-02-13 present; today Mon 2026-02-16 not checked in yet
+    const att = [A('Budi', '2026-02-12'), A('Budi', '2026-02-13')];
+    const [row] = computeLeaderboard(att, [], '2026-02-16', NO_HOLIDAYS);
+    expect(row.currentStreak).toBe(2);
+  });
+
+  it('sums kuaci over the kept streak days', () => {
+    const att = [A('Budi', '2026-02-16'), A('Budi', '2026-02-17')];
+    const kuaci = [K('Budi', '2026-02-16', 5), K('Budi', '2026-02-17', 7)];
+    const [row] = computeLeaderboard(att, kuaci, '2026-02-18', NO_HOLIDAYS);
+    expect(row.kuaciInStreak).toBe(12);
+  });
+});

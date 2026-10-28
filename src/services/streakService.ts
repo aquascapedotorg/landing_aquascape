@@ -12,6 +12,7 @@ import {
 } from './supabaseFishService';
 import { aquascapeEvents } from '../components/aquascapeEvents';
 import { createDebouncer } from './debounce';
+import { fetchAllRows } from './fetchAllRows';
 
 // Kuaci counts are buffered client-side and written in one batch every 30s.
 // A slower flush drastically cuts Disk IO writes (WAL/checkpoint) versus the
@@ -61,13 +62,28 @@ async function refresh(): Promise<void> {
   if (!client) return;
   const today = toDateString(new Date());
   try {
-    const [attRes, kuaciRes] = await Promise.all([
-      client.from('communal_fishes').select('name,entry_date,created_at,species'),
-      client.from('fish_daily_kuaci').select('name,entry_date,kuaci_count'),
+    const db = client;
+    // Page through every row: a plain select() is capped at 1000 rows by
+    // PostgREST, which silently dropped the newest check-ins once the table
+    // grew past 1000 and reset everyone's streak. Order by a unique key so
+    // pages are stable.
+    const [attendance, kuaci] = await Promise.all([
+      fetchAllRows<AttendanceRow>((from, to) =>
+        db
+          .from('communal_fishes')
+          .select('name,entry_date,created_at,species')
+          .order('id', { ascending: true })
+          .range(from, to)
+      ),
+      fetchAllRows<KuaciRow>((from, to) =>
+        db
+          .from('fish_daily_kuaci')
+          .select('name,entry_date,kuaci_count')
+          .order('name', { ascending: true })
+          .order('entry_date', { ascending: true })
+          .range(from, to)
+      ),
     ]);
-
-    const attendance = (attRes.data as AttendanceRow[] | null) || [];
-    const kuaci = (kuaciRes.data as KuaciRow[] | null) || [];
 
     leaderboard = computeLeaderboard(attendance, kuaci, today, holidays);
     rebuildRankIndex();
