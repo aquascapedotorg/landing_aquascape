@@ -1,7 +1,18 @@
 {
-  "generated_at": "2026-11-27T05:07:48.833Z",
+  "generated_at": "2026-11-27T14:59:30.077Z",
   "org": "aquascapedotorg",
   "repos": [
+    {
+      "name": "cekel",
+      "description": "Cekel: pegangan sebelum meeting, sinyal sesudahnya",
+      "language": "TypeScript",
+      "visibility": "private",
+      "created_at": "2026-11-27T08:31:49Z",
+      "updated_at": "2026-11-27T08:32:06Z",
+      "topics": [],
+      "html_url": "https://github.com/aquascapedotorg/cekel",
+      "readme": "# Cekel\n\nPegangan sebelum meeting, sinyal sesudahnya. Desain: `docs/superpowers/specs/2026-11-26-cekel-design.md`.\n\n## Menjalankan lokal\n\nButuh Node 24 dan Docker.\n\n```\nnpm install\nnpx supabase start -x realtime,imgproxy,logflare,vector,supavisor,edge-runtime\n```\n\nPort Supabase lokal Cekel digeser +100 supaya bisa berjalan berdampingan dengan stack Etalase: API `54421`, DB `54422`, Studio `54423`.\n\nIsi `.env.local` dari `npx supabase status -o env`:\n\n```\nVITE_SUPABASE_URL=<API_URL>\nVITE_SUPABASE_ANON_KEY=<ANON_KEY>\n```\n\nLalu `npm run dev` (port `5175`).\n\nLogin Google tidak tersedia di stack lokal. Untuk mencoba UI secara lokal, buat akun uji email dan password lewat service role, lalu masuk dari konsol browser dengan `supabase.auth.signInWithPassword`.\n\n## Tes\n\n```\nnpm test            # unit (src/**/*.test.ts)\nnpm run test:rls    # RLS terhadap Supabase lokal; menghapus data lokal\n```\n\n## Project dev dan admin pertama\n\n1. `npx supabase link --project-ref <ref>`\n2. `npx supabase db push --linked`\n3. Daftarkan admin pertama:\n   `npx supabase db query --remote \"insert into public.allowed_emails(email, peran) values ('<email>', 'admin')\"`\n4. Admin berikutnya dan anggota lain ditambahkan dari halaman Pengaturan > Anggota.\n\nProvider Email di Supabase harus dimatikan. Login hanya lewat Google.\n\n## Aturan anggota\n\n- Hanya email di Pengaturan > Anggota yang bisa masuk.\n- Minimal satu admin aktif.\n- Maksimal 10 anggota aktif selama uji coba (fungsi `member_limit()` di migrasi).\n"
+    },
     {
       "name": "tejo-pool",
       "description": "Internal talent and job pool: find consented talents by role, skill and availability, then sales cooked projects",
